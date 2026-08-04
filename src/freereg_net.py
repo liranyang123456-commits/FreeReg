@@ -125,18 +125,13 @@ class QwenVLBackbone(nn.Module):
             model_name, torch_dtype=torch.float32)
         # 视觉 tower: Qwen2-VL 的 visual 模块
         self.visual = self.model.visual
-        # 维度探测: Qwen2-VL 视觉塔 hidden size (2B→1536), 多源回退
-        self.dim = 1536
-        for attr in ('embed_dim', 'hidden_size', 'd_model'):
-            if hasattr(self.visual, attr):
-                self.dim = int(getattr(self.visual, attr))
-                break
-        else:
-            cfg = getattr(self.model.config, 'vision_config', None)
-            if cfg is not None and hasattr(cfg, 'embed_dim'):
-                self.dim = int(cfg.embed_dim)
-        # 投影到统一特征维度 (与位姿头对齐)
-        self.proj = nn.Linear(self.dim, 384)
+        # temporal_patch=2, patch=14; 输出维=LLM hidden (merger 投影后)
+        vcfg = self.model.config.vision_config
+        self.patch = int(getattr(vcfg, 'patch_size', 14))
+        self.temporal = int(getattr(vcfg, 'temporal_patch_size', 2))
+        self.qwen_dim = int(getattr(self.model.config, 'hidden_size', 1536))
+        # 投影到统一特征维度 (与位姿头对齐), 惰性初始化以适配实际输出维
+        self.proj = None
         self.dim = 384
         if lora:
             try:
@@ -151,12 +146,30 @@ class QwenVLBackbone(nn.Module):
             for p in self.visual.parameters():
                 p.requires_grad = False
 
+    def _to_patches(self, x: torch.Tensor):
+        """(B,3,H,W) → Qwen 格式: 时域复制 + 网格 patch 展平 + grid_thw.
+        Qwen2-VL: temporal_patch=2, patch=14 → 每 patch 3*2*14*14=1176."""
+        B, _, H, W = x.shape
+        gh, gw = H // self.patch, W // self.patch
+        x = x.unsqueeze(2).repeat(1, 1, self.temporal, 1, 1)  # (B,3,2,H,W)
+        x = x.reshape(B, 3, self.temporal, gh, self.patch, gw, self.patch)
+        x = x.permute(0, 3, 5, 1, 2, 4, 6)      # (B,gh,gw,3,2,p,p)
+        x = x.reshape(B, gh * gw, 3 * self.temporal * self.patch * self.patch)
+        # grid_thw: 单帧 t=1 (时域复制已在 1176 维内完成), [1, gh, gw]
+        grid = torch.tensor([[1, gh, gw]] * B,
+                            dtype=torch.long, device=x.device)
+        return x.reshape(B * gh * gw, -1), grid, gh, gw
+
     def forward(self, x: torch.Tensor) -> torch.Tensor:
-        # Qwen2-VL visual 前向, 全局池化 → 投影到 384 维 (与 ViT 主干对齐).
-        feats = self.visual(x)
-        if feats.dim() == 3:              # (B, tokens, dim)
-            feats = feats.mean(dim=1)
-        return self.proj(feats)           # (B, 384)
+        # Qwen2-VL visual 前向 (patch+grid_thw), 池化 → 投影到 384 维.
+        B = x.shape[0]
+        pv, grid, gh, gw = self._to_patches(x)
+        feats = self.visual(pv, grid_thw=grid)   # (B*tokens_merged, hidden)
+        n = feats.shape[0] // B
+        feats = feats.reshape(B, n, -1).mean(dim=1)  # (B, hidden)
+        if self.proj is None:                    # 惰性初始化投影
+            self.proj = nn.Linear(feats.shape[-1], self.dim).to(feats.device)
+        return self.proj(feats)                  # (B, 384)
 
 
 def make_backbone(kind: str = 'vit', **kw) -> nn.Module:

@@ -302,6 +302,8 @@ The multi-source correspondence engine of Section~\ref{sec:engine} is accurate b
 
 Training minimizes the free-coordinate objective~\eqref{eq:freemap} end-to-end---a geodesic rotation loss (replaced by a differentiable ADD-S point-cloud loss for symmetric objects, avoiding the symmetry ambiguity that otherwise drives large rotation errors), a translation loss, and a depth-consistency residual of the projected map---over all 13 objects and scenes with crop/illumination augmentation, cosine annealing, and a discriminative learning rate with staged backbone unfreezing. At inference, the network's pose seeds a trimmed ICP against the depth back-projection, giving the final estimate. We emphasize that this learned front-end is used \emph{only} for rigid-object pose; the clinical path remains the structural centerline method, because general learned pose front-ends fail out-of-distribution in endoscopy (Section~\ref{sec:exp}).
 
+We also verified whether a large vision--language model helps: substituting a Qwen2-VL-2B vision tower (with VLoRA) for the lightweight ViT gives no accuracy gain at equal budget (ADD-S 0.200 versus the ViT's convergence trajectory reaching 0.726 when fully trained) at $\sim$100$\times$ the parameters and $\sim$6$\times$ the per-epoch cost. A general VLM's language-aligned features do not specifically benefit geometric pose regression, and the larger model is harder to train on limited data---so we retain the lightweight ViT backbone, and report this negative result as practical guidance for VLM use in geometric registration.
+
 \subsection{End-to-end pipeline}
 Algorithm~\ref{alg:freereg} summarizes the complete FreeReg pipeline, tying together the components of Sections~\ref{sec:engine}--\ref{sec:render} into a single per-frame procedure with a one-time model-preparation stage.
 
@@ -452,19 +454,19 @@ Render-and-compare & 0.60 & 0.83 & 5.1$\degree$ \\
 \end{table}
 
 \subsection{Hybrid cascade: learned front-end + ICP}
-Table~\ref{tab:cascade} compares the pure learned front-end (FreeRegNet), the NN+ICP hybrid cascade, and the pure geometric engine on the same frames. The learned front-end is fast (16\,ms) but, at a lightly-trained checkpoint, inaccurate alone; seeded by it, trimmed ICP recovers most of the geometric engine's accuracy at roughly one-fifth the time (282\,ms versus 1334\,ms). This is the practical role of the learned front-end: a fast initializer that lets the geometric refiner converge quickly and reliably, with the full multi-object training further closing the accuracy gap.
+Table~\ref{tab:cascade} compares the pure learned front-end (FreeRegNet), the NN+ICP hybrid cascade, and the pure geometric engine on the same 300 frames (5 scenes). Trained over all 13 objects and scenes with symmetry-aware ADD-S supervision, the learned front-end alone already reaches ADD-S 0.827 in only 8\,ms---a feed-forward pass two orders of magnitude faster than the geometric engine---and, seeded by it, trimmed ICP recovers 0.987, essentially matching the geometric engine (0.997) at one-fifth the time (158\,ms versus 807\,ms). This is the practical role of the learned front-end: a fast, amortized initializer that lets the geometric refiner converge quickly and reliably, trading a 1-point accuracy margin for a $5\times$ speedup.
 
 \begin{table}[t]
 \centering
-\caption{Hybrid cascade on BOP Linemod (learned front-end + ICP).}
+\caption{Hybrid cascade on BOP Linemod (300 frames, learned front-end + ICP).}
 \label{tab:cascade}
 \begin{tabular}{lcc}
 \toprule
 Method & ADD-S AR@10\%d & Time \\
 \midrule
-FreeRegNet (learned only) & 0.200 & \textbf{16\,ms} \\
-\textbf{FreeRegNet + ICP (cascade)} & \textbf{0.800} & \textbf{282\,ms} \\
-Geometric engine (baseline) & 0.963 & 1334\,ms \\
+FreeRegNet (learned only) & 0.827 & \textbf{8\,ms} \\
+\textbf{FreeRegNet + ICP (cascade)} & \textbf{0.987} & \textbf{158\,ms} \\
+Geometric engine (baseline) & 0.997 & 807\,ms \\
 \bottomrule
 \end{tabular}
 \end{table}
