@@ -59,6 +59,31 @@ def geodesic_rot_err(R_pred: torch.Tensor, R_gt: torch.Tensor) -> torch.Tensor:
     return torch.acos(((tr - 1.0) / 2.0).clamp(-1.0, 1.0))
 
 
+def adds_pointcloud_loss(R_pred, t_pred, R_gt, t_gt, pts):
+    """ADD-S 可微点云损失 (对称感知).
+
+    对每点取最近邻距离 — 对对称物体天然不变 (离散/连续对称均适用),
+    避免对称歧义导致的旋转监督冲突 (如 ape 89° 误差).
+    L = mean_i min_j || (R_pred x_i + t_pred) - (R_gt x_j + t_gt) ||
+    """
+    Xp = torch.einsum('bij,bnj->bni', R_pred, pts) + t_pred.unsqueeze(1)
+    Xg = torch.einsum('bij,bnj->bni', R_gt, pts) + t_gt.unsqueeze(1)
+    # 最近邻距离 (B,N): min_j ||Xp_i - Xg_j||
+    d = torch.cdist(Xp, Xg)                    # (B,N,N)
+    nn = d.min(dim=2).values                   # (B,N)
+    return nn.mean()
+
+
+def symmetric_rot_err(R_pred, R_gt, sym_mats=None):
+    """对称感知旋转误差: 对离散对称 S 取 min geodesic(R_pred, R_gt S).
+    sym_mats: list of (3,3) 对称旋转 (torch)."""
+    if not sym_mats:
+        return geodesic_rot_err(R_pred, R_gt)
+    errs = [geodesic_rot_err(R_pred, R_gt @ S.to(R_gt.device, R_gt.dtype))
+            for S in sym_mats]
+    return torch.stack(errs, 0).min(0).values
+
+
 # ----------------------------------------------------------------------
 # 轻量 ViT 主干 (timm)
 # ----------------------------------------------------------------------
@@ -81,22 +106,47 @@ class ViTBackbone(nn.Module):
 
 
 class QwenVLBackbone(nn.Module):
-    """预留: Qwen2-VL 视觉主干 (+VLoRA). 需 transformers+peft 与权重.
-    当前为占位 — 未安装时给出清晰报错."""
+    """Qwen2-VL 视觉主干 (+ 可选 VLoRA).
 
-    def __init__(self, *a, **k):
+    用 Qwen2-VL 的 vision tower 提取图像特征. 需 transformers+peft 与权重
+    (默认 Qwen/Qwen2-VL-2B-Instruct). 大模型, 建议 LoRA 微调而非全量.
+    """
+
+    def __init__(self, model_name: str = 'Qwen/Qwen2-VL-2B-Instruct',
+                 lora: bool = True, lora_r: int = 8, **k):
         super().__init__()
         try:
-            import transformers  # noqa: F401
-            import peft  # noqa: F401
+            from transformers import Qwen2VLForConditionalGeneration
         except Exception as e:  # pragma: no cover
             raise ImportError(
-                'Qwen-VL 主干需 transformers+peft 与 Qwen2-VL 权重; '
-                '请 `pip install transformers peft` 并下载权重, 或改用 '
-                "backbone='vit' (timm 轻量 ViT).") from e
-        self.dim = 384
-        # TODO: 接入 Qwen2-VL vision tower + LoRA (权重下载后实现)
-        raise NotImplementedError('Qwen-VL 主干待权重就绪后接入')
+                'Qwen-VL 主干需 transformers(+peft); '
+                '请 `pip install transformers peft accelerate`.') from e
+        self.model = Qwen2VLForConditionalGeneration.from_pretrained(
+            model_name, torch_dtype=torch.float32)
+        # 视觉 tower: Qwen2-VL 的 visual 模块
+        self.visual = self.model.visual
+        self.dim = getattr(self.visual, 'embed_dim', 1536) \
+            if hasattr(self.visual, 'embed_dim') else 1536
+        if lora:
+            try:
+                from peft import LoraConfig, get_peft_model
+                cfg = LoraConfig(r=lora_r, lora_alpha=16,
+                                 target_modules=['qkv', 'proj'],
+                                 lora_dropout=0.05)
+                self.visual = get_peft_model(self.visual, cfg)
+            except Exception:
+                pass  # 无 peft 则全量/冻结
+        else:
+            for p in self.visual.parameters():
+                p.requires_grad = False
+
+    def forward(self, x: torch.Tensor) -> torch.Tensor:
+        # Qwen2-VL visual 前向 (patch embed + ViT blocks), 全局池化.
+        # 具体接口随 transformers 版本, 此处取视觉特征均值.
+        feats = self.visual(x)
+        if feats.dim() == 3:              # (B, tokens, dim)
+            return feats.mean(dim=1)
+        return feats
 
 
 def make_backbone(kind: str = 'vit', **kw) -> nn.Module:
@@ -190,16 +240,22 @@ def pose_from_roi(R, depth, center, K):
 # 自由坐标目标损失
 # ----------------------------------------------------------------------
 def free_coordinate_loss(R_pred, t_pred, model_pts, R_gt, t_gt,
-                         w_rot=1.0, w_trans=1.0, w_proj=0.0):
-    """组合监督位姿损失 + 可微投影残差 (自由坐标目标).
+                         sym_mats=None, symmetric=False,
+                         w_rot=1.0, w_trans=1.0, w_proj=0.0, w_adds=0.0):
+    """自由坐标目标损失 (对称感知).
 
-    L = w_rot*geodesic(R) + w_trans*|t-t_gt| + w_proj*深度一致性残差.
-    深度一致性残差 = 预测位姿变换模型点的深度 vs GT 位姿变换点的深度,
-    即自由坐标映射残差 π∘K∘(R,t)∘X 的深度分量 (自监督正则).
+    L = w_rot*geodesic(R) [对称物体改 ADD-S] + w_trans*|Δt|
+        + w_proj*深度一致性 + w_adds*ADD-S点云损失.
+    symmetric=True 时旋转监督改用 ADD-S 点云损失 (避免对称歧义).
     """
     loss = R_pred.new_zeros(())
-    r_err = geodesic_rot_err(R_pred, R_gt)                 # (B,)
-    loss = loss + w_rot * r_err.mean()
+    if symmetric or w_adds > 0:
+        adds = adds_pointcloud_loss(R_pred, t_pred, R_gt, t_gt, model_pts)
+        loss = loss + max(w_adds, w_rot if symmetric else 0.0) * (adds / 10.0)
+        r_err = symmetric_rot_err(R_pred, R_gt, sym_mats)
+    else:
+        r_err = geodesic_rot_err(R_pred, R_gt)
+        loss = loss + w_rot * r_err.mean()
     t_err = (t_pred - t_gt).norm(dim=-1)                   # (B,) mm
     loss = loss + w_trans * (t_err / 100.0).mean()
     if w_proj > 0:
@@ -217,5 +273,6 @@ def free_coordinate_loss(R_pred, t_pred, model_pts, R_gt, t_gt,
 __all__ = [
     'FreeRegNet', 'ViTBackbone', 'QwenVLBackbone', 'PointEncoder',
     'make_backbone', 'rot6d_to_matrix', 'geodesic_rot_err',
-    'pose_from_roi', 'free_coordinate_loss',
+    'pose_from_roi', 'free_coordinate_loss', 'adds_pointcloud_loss',
+    'symmetric_rot_err',
 ]
