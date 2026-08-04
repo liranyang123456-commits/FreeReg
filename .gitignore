@@ -1,0 +1,13 @@
+# 大数据与产物不入库 (本地保留)
+outputs/
+*.zip
+*.7z
+*.tar
+*.tar.gz
+__pycache__/
+*.pyc
+.pytest_cache/
+.DS_Store
+Thumbs.db
+*.log
+outputs_backup/
