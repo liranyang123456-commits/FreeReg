@@ -125,8 +125,19 @@ class QwenVLBackbone(nn.Module):
             model_name, torch_dtype=torch.float32)
         # 视觉 tower: Qwen2-VL 的 visual 模块
         self.visual = self.model.visual
-        self.dim = getattr(self.visual, 'embed_dim', 1536) \
-            if hasattr(self.visual, 'embed_dim') else 1536
+        # 维度探测: Qwen2-VL 视觉塔 hidden size (2B→1536), 多源回退
+        self.dim = 1536
+        for attr in ('embed_dim', 'hidden_size', 'd_model'):
+            if hasattr(self.visual, attr):
+                self.dim = int(getattr(self.visual, attr))
+                break
+        else:
+            cfg = getattr(self.model.config, 'vision_config', None)
+            if cfg is not None and hasattr(cfg, 'embed_dim'):
+                self.dim = int(cfg.embed_dim)
+        # 投影到统一特征维度 (与位姿头对齐)
+        self.proj = nn.Linear(self.dim, 384)
+        self.dim = 384
         if lora:
             try:
                 from peft import LoraConfig, get_peft_model
@@ -141,12 +152,11 @@ class QwenVLBackbone(nn.Module):
                 p.requires_grad = False
 
     def forward(self, x: torch.Tensor) -> torch.Tensor:
-        # Qwen2-VL visual 前向 (patch embed + ViT blocks), 全局池化.
-        # 具体接口随 transformers 版本, 此处取视觉特征均值.
+        # Qwen2-VL visual 前向, 全局池化 → 投影到 384 维 (与 ViT 主干对齐).
         feats = self.visual(x)
         if feats.dim() == 3:              # (B, tokens, dim)
-            return feats.mean(dim=1)
-        return feats
+            feats = feats.mean(dim=1)
+        return self.proj(feats)           # (B, 384)
 
 
 def make_backbone(kind: str = 'vit', **kw) -> nn.Module:
