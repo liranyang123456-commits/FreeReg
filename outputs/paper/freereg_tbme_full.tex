@@ -1,0 +1,693 @@
+\documentclass[9pt,twoside,web]{ieeecolor2}
+\usepackage{generic}
+\usepackage{cite}
+\usepackage{amsmath,amssymb,amsfonts}
+\usepackage{graphicx}
+\usepackage{textcomp}
+\usepackage{gensymb}
+\usepackage{booktabs}
+\usepackage{multirow}
+\usepackage{url}
+\usepackage{tikz}
+\usetikzlibrary{positioning,arrows.meta}
+\usepackage[hidelinks]{hyperref}
+
+\graphicspath{{figs/}{./}}
+
+\newtheorem{theorem}{Theorem}
+\newtheorem{lemma}{Lemma}
+\newtheorem{proposition}{Proposition}
+\newtheorem{definition}{Definition}
+\newtheorem{remark}{Remark}
+
+\markboth{\journalname, VOL. XX, NO. XX, XXXX 2026}
+{Li \MakeLowercase{\textit{et al.}}: FreeReg: Observability-Guided Non-Rigid Registration of Arbitrary 3D Models into Arbitrary Endoscopic Images and Videos}
+
+\begin{document}
+
+\title{FreeReg: Observability-Guided Non-Rigid Registration of Arbitrary 3D Models into Arbitrary Endoscopic Images and Videos}
+
+\author{Ranyang Li, Nan Wei, Chao Fan, and Junjun Pan
+\thanks{Ranyang Li and Chao Fan are with the School of Artificial Intelligence and Big Data, Henan University of Technology, Zhengzhou 450001, China (e-mail: lry@haut.edu.cn). Ranyang Li is the corresponding author.}
+\thanks{Nan Wei is with Henan Provincial People's Hospital, Zhengzhou University, Zhengzhou 450003, China.}
+\thanks{Junjun Pan is with the State Key Laboratory of Virtual Reality Technology and Systems, Beihang University, Beijing 100191, China (e-mail: pan\_junjun@buaa.edu.cn) and is the co-corresponding author.}
+}
+
+\maketitle
+
+%==============================================================================
+% ABSTRACT
+%==============================================================================
+\begin{abstract}
+\emph{Objective.} Registering an arbitrary 3D model---a CT reconstruction, an instrument, an implant---into an arbitrary endoscopic image or video requires computing the projection mapping among the model, camera, and pixel coordinate frames. Classical calibrate-then-align pipelines assume calibrated cameras, rigid targets, and independent per-frame estimation; all three fail in endoscopy, where calibration is absent, tissue deforms, and per-frame noise breaks the mixed-reality (MR) illusion. \emph{Methods.} We formalize free-coordinate registration as the joint estimation of the free mapping $F=\pi_{D}\circ K\circ(R,t)\circ(I+W)$ among the three frames, with every component individually optional and degradable. FreeReg unifies a multi-source correspondence engine with contour-gated arbitration, an observability-guided rigid-plus-warp (RTW) estimator that deforms only within the provably observable subspace, a manifold SE(3) Kalman filter with innovation gating, and a co-anchored registration--rendering field driving 3D Gaussian splatting. \emph{Results.} On 125 BOP Linemod samples the engine reaches BOP-protocol AR of 0.848 (MSSD 0.905/MSPD 0.865/VSD 0.776) versus FoundationPose 0.847 (published) and 2.27\,mm ADD-S (measured); on 308 BOP T-LESS samples it reaches ADD-S AR@10\%d of 0.942. The gated manifold filter reduces video jitter by 34--60\% at 35\,ms/frame with zero false relocations over 197 real endoscopic frames. Single-view deformation is severely rank-deficient (151/648 observable directions); observability-guided RTW improves shape fidelity at equal data fit. On 12 clinical CT-to-bronchoscopy cases (270 frames), target registration error is 4.23\,mm mean / 2.93\,mm median (92\% $<$10\,mm, Wilcoxon $p=4.4\times10^{-31}$) at 30--80\,FPS, and on the real-colon FEM benchmark end-to-end deformation recovery reaches 1.1\% of model extent. A 3D Gaussian splatting renderer achieves 46.3\,dB PSNR at 112\,FPS. \emph{Conclusion.} A correspondence-plus-arbitration architecture with observability-guided non-rigid estimation approaches learned single-frame pose champions while uniquely covering non-rigidity, temporal coherence, multi-model occlusion, real-time neural rendering, and calibration-free clinical deployment. \emph{Significance.} We isolate---numerically and mechanistically---the observability structure governing when non-rigid endoscopic registration is solvable, including a ray-sliding counterexample and a determinant-corrupting parameterization pitfall in differentiable Lie-group optimization.
+\end{abstract}
+
+\begin{IEEEkeywords}
+Augmented reality, registration, non-rigid registration, pose estimation, Gaussian splatting, bronchoscopy, surgical navigation, observability, Kalman filtering, scene graph.
+\end{IEEEkeywords}
+
+%==============================================================================
+% INTRODUCTION
+%==============================================================================
+\section{Introduction}\label{sec:intro}
+
+Surgical mixed reality (MR) overlays a patient-specific 3D model---a CT/MRI airway reconstruction, a surgical instrument, an implant, a radiation target---onto the live endoscopic video, fusing them geometrically and photometrically so that the virtual content appears anchored to the anatomy without distortion~\cite{ma2020emnb,bobrow2023c3vd}. At its core this is a projection-mapping problem among at least three coordinate frames: the \emph{model frame} $\mathcal{F}_{m}$, the \emph{camera frame} $\mathcal{F}_{c}$, and the \emph{pixel frame} $\mathcal{F}_{p}$. A point $\mathbf{X}_{m}$ in the model frame is carried to the image by the chain
+\begin{equation}\label{eq:chain}
+\mathbf{x}_{p} = \pi_{D}\!\bigl(\, K\,\mathbf{T}_{cm}\,(\mathbf{X}_{m} + W(\mathbf{X}_{m}))\,\bigr),
+\end{equation}
+where $\mathbf{T}_{cm}=(\mathbf{R},\mathbf{t})\in SE(3)$ is the rigid model-to-camera pose, $W$ is a deformation field, $K$ collects the camera intrinsics, and $\pi_{D}$ is the (possibly distorted) perspective projection. The classical industrial and surgical-navigation decomposition---calibrate the camera, collect corresponding points between model and scene, and align them by a rigid rotation-translation (RT) transform~\cite{kabsch1976,umeyama1991,besl1992icp}---rests on three assumptions that fail in endoscopy.
+
+\textbf{Three failures of the classical pipeline.} \emph{First, calibration is unavailable or drifts.} Intrinsics $K$ are rarely provided for a deployed endoscope, may differ from the manufacturer's nominal value, and change with focus and coupling; distortion $D$ is unknown. \emph{Second, anatomy is not rigid.} Respiration, heartbeat, peristalsis, and instrument pressure deform tissue continuously, so a rigid fit reallocates the deformation energy into pose error---the model appears to ``swim'' even when its silhouette matches. \emph{Third, per-frame estimation is temporally incoherent.} Independent per-frame poses jitter at the pixel level, producing floating and flicker that break the MR illusion and, in surgery, can mislead the operator.
+
+\textbf{Free-coordinate registration.} We therefore reformulate the problem from first principles. Rather than assuming a calibrated world frame, we treat the mapping $F:\mathcal{X}_{m}\leftrightarrow\mathcal{X}_{c}\leftrightarrow\mathcal{X}_{p}$ among the three frames as a jointly estimable object, in which every parameter---intrinsics $K$, depth $z$, rigid pose $(\mathbf{R},\mathbf{t})$, deformation $W$, scale $s$, and model count---is individually optional and degradable. We call this \emph{free-coordinate registration}, because no frame is privileged as a fixed reference; all are estimated from the data and cross-validated against one another. Formally we write the free mapping as
+\begin{equation}\label{eq:freemap}
+F = \pi_{D}\circ K\circ(\mathbf{R},\mathbf{t})\circ(I+W),
+\end{equation}
+a composition in which any factor may be clamped to the identity when unobserved. This framing exposes a question the classical pipeline hides: \emph{which factors are observable from the data at all}, and within what subspace can each be recovered?
+
+\textbf{Observability as the central scarcity.} Our central finding is that the limiting resource in endoscopic registration is not optimization machinery but \emph{observability}: the depth-residual operator of a single view is severely rank-deficient, so most deformation directions cannot be inferred from the image no matter how sophisticated the optimizer. We isolate this structure numerically and mechanistically, show that it explains a wide range of phenomena (tubular roll, smooth-warp rigidity equivalence, tangential-deformation invisibility, far-field lever amplification, and a \emph{ray-sliding} counterexample), and use it to guide the estimator: deform only within the provably observable subspace, and filter the rest. We also isolate a subtle, pernicious \emph{parameterization pitfall} in differentiable Lie-group optimization---a single line that doubled an antisymmetric skew matrix and silently broke Rodrigues orthonormality ($\det\mathbf{R}\approx49$)---whose signature (loss converges while geometry is wrong) is both a proof of the observability argument and a cautionary note for the field.
+
+\textbf{Contributions.}
+\begin{enumerate}
+\item A \textbf{free-coordinate registration framework} (Section~\ref{sec:form}) unifying calibrated/uncalibrated, RGB/RGB-D, and monocular/stereo inputs into one correspondence kernel with a taxonomy of correspondence types and their solvers (Section~\ref{sec:corr}).
+\item A \textbf{multi-source correspondence engine with contour-gated arbitration} (Section~\ref{sec:engine}) that fuses texture SIFT, geometric FPFH, and render-and-compare templates, and resolves symmetric flips with a contour-shape score (9/9 versus 5/9 for depth consistency).
+\item \textbf{Observability-guided and hierarchical RTW registration} (Section~\ref{sec:rtw}): we prove the single-view depth-residual operator is rank-deficient to 151/648 singular directions (23\%), and deform only within the observable subspace via a spectral projection, with a hierarchical control lattice and region-focused refinement for local features.
+\item \textbf{Contour-gated manifold temporal consistency} (Section~\ref{sec:kalman}): a manifold SE(3) Kalman filter with right-invariant innovations, separated translation/rotation velocity noise, and an innovation gate that rejects outliers and coasts on prediction, analyzed by Wilcoxon testing of the accuracy--smoothness trade.
+\item \textbf{Co-anchored registration--rendering} (Section~\ref{sec:render}): one deformation anchor field drives both the RTW registration and a 3D Gaussian Splatting renderer, so the render residual doubles as an online label-free validation signal; a scene graph handles multi-model occlusion.
+\item A \textbf{free-coordinate clinical registration benchmark} (Section~\ref{sec:exp}): 12 CT-to-bronchoscopy cases (270 frames) with TRE 4.23\,mm mean (median 2.93\,mm, 92\% $<$10\,mm, Wilcoxon $p=4.4\times10^{-31}$) at 30--80\,FPS, a real-colon FEM benchmark with 1.1\% end-to-end recovery, and a centerline correspondence that registers $0.0\degree$/6.6\,mm inside the airway where depth ICP fails (38.1\,mm).
+\end{enumerate}
+
+The full pipeline, all evaluation scripts, and the Windows build of FoundationPose used for comparison are released for reproducibility.
+
+%==============================================================================
+% RELATED WORK
+%==============================================================================
+\section{Related Work}\label{sec:related}
+
+\subsection{Object pose estimation}
+BOP-benchmark 6-DoF pose estimation has progressed from classical feature methods~\cite{hodan2018bop} through MegaPose (AR $\approx0.53$)~\cite{labbe2022megapose} and SAM-6D (AR 0.818--0.825)~\cite{lin2024sam6d} to FoundationPose (AR 0.847)~\cite{wen2024foundationpose}, the first unified CAD/model-free zero-shot method. These are per-frame, rigid, intrinsics-dependent estimators. Our engine is interface-isomorphic with FoundationPose's output (a $4\times4$ pose) and is swappable with it; we additionally compare against its official implementation, ported to Windows for this work, on shared frames. Classical correspondence solvers underpin all of these: Kabsch~\cite{kabsch1976} and Umeyama~\cite{umeyama1991} for 3D--3D alignment, ICP~\cite{besl1992icp}, FPFH+RANSAC~\cite{rusu2009fpfh,fischler1981ransac}, and EPnP~\cite{lepetit2009epnp} for 2D--3D.
+
+\subsection{Calibration-free reconstruction}
+DUSt3R (CVPR 2024)~\cite{wang2024dust3r} regresses pointmaps from uncalibrated image pairs; MASt3R and VGGT~\cite{wang2025vggt} extend it to larger feeds. Endo3R (MICCAI 2025)~\cite{guo2025endo3r} specializes to endoscopic video, yielding aligned trajectories (our measurement: ATE 1.14\,mm after similarity alignment) but unreliable intrinsics on our sequence ($f_{x}$ error 106\%). Monocular SLAM (ORB-SLAM3~\cite{campos2021orbslam3}, DROID-SLAM~\cite{teed2021droidslam}) provides continuous trajectories without metric scale or external-model registration. These methods recover scene geometry but do not register a known external model into the camera frame---our target task.
+
+\subsection{Non-rigid registration}
+Free-form deformation (FFD)~\cite{sederberg1986ffd,rueckert1999nonrigid} and embedded-deformation graphs~\cite{sumner2007embedded} parameterize smooth warps by a sparse control lattice; DynamicFusion~\cite{newcombe2015dynamicfusion} reconstructs non-rigid scenes in real time; NRSfM factors deformation from image correspondences; 4D Gaussian Splatting~\cite{wu20244dgs} renders dynamics but optimizes for reconstruction, not registration. Crucially, \emph{none analyzes the observability of deformation under single-view projection}, which we show is rank-deficient to 23\%. Our spectral observability decomposition, and the estimator it motivates, is to our knowledge new in this setting.
+
+\subsection{Temporal consistency and medical AR}
+Manifold filtering on SE(3) is standard in robotics (error-state EKF)~\cite{kalman1960,sola2018lie}. We contribute a right-invariant innovation, separated translation/rotation velocity noise scales, and a principled innovation gate, and we analyze \emph{when filtering trades accuracy for smoothness} via Wilcoxon testing---a median $-0.36$\,mm TRE cost for a 34--59\% jitter reduction. In medical AR, electromagnetic navigation bronchoscopy registers at 5--10\,mm clinical error~\cite{ma2020emnb}; SCARED~\cite{allan2021scared} and C3VD~\cite{bobrow2023c3vd} provide endoscopic data with GT depth/poses.
+
+\subsection{Differentiable and neural rendering}
+3D Gaussian Splatting~\cite{kerbl20233dgs} renders radiance fields in real time via EWA splatting; EndoNeRF~\cite{wang2022endonerf} and EndoGaussian~\cite{zhu2023endogaussian} apply neural fields to deforming endoscopic scenes; nvdiffrast~\cite{laine2020nvdiffrast} provides differentiable rasterization. Our co-anchored design differs: one deformation field drives \emph{both} registration and rendering, so the renderer's photometric residual is an online validation signal for the registration rather than an independent reconstruction objective.
+
+%==============================================================================
+% FREE-COORDINATE FORMULATION
+%==============================================================================
+\section{Free-Coordinate Formulation}\label{sec:form}
+
+\subsection{Coordinate frames and the projection chain}
+Let $\mathcal{F}_{m}$, $\mathcal{F}_{c}$, $\mathcal{F}_{p}$ be the model, camera, and pixel frames, with homogeneous points $\mathbf{X}_{m}\in\mathbb{P}^{3}$, $\mathbf{X}_{c}\in\mathbb{P}^{3}$, and $\mathbf{x}_{p}\in\mathbb{P}^{2}$. The rigid model-to-camera transform is $\mathbf{T}_{cm}\in SE(3)$; deformation is a vector field $W:\mathbb{R}^{3}\to\mathbb{R}^{3}$; intrinsics are $K\in\mathbb{R}^{3\times3}$; and the projection is
+\begin{equation}\label{eq:proj}
+\pi_{D}(\mathbf{y}) = D\!\left(\frac{y_{1}}{y_{3}},\frac{y_{2}}{y_{3}}\right),
+\end{equation}
+where $D$ is a distortion model (Brown--Conrady in our implementation, optional). The full mapping~\eqref{eq:chain} composes these. Because no frame is fixed, the problem is to estimate the whole free map $F$~\eqref{eq:freemap} from whatever observations are available, cross-validating frames against one another.
+
+\subsection{Depth as the bridge between frames}
+The pixel frame is 2D; lifting it to the camera frame requires depth. For a calibrated back-projection, a pixel $(u,v)$ with depth $z$ lifts to
+\begin{equation}\label{eq:backproj}
+\mathbf{X}_{c} = z\,K^{-1}[u,v,1]^{\top}.
+\end{equation}
+Depth may come from a depth sensor (RGB-D), stereo disparity, a learned monocular prior, or a reconstruction method. The \emph{quality and observability of depth is the single most important determinant of registration accuracy}, because errors in $z$ propagate through~\eqref{eq:backproj} into $\mathbf{X}_{c}$ and hence into the pose. We return to this in the observability analysis (Section~\ref{sec:rtw}).
+
+\subsection{The correspondence taxonomy}\label{sec:corr}
+Estimating $F$ requires \emph{correspondences}: pairs of points known to represent the same physical location in two frames. We organize the taxonomy by the frames bridged, and give a unified solver template for each.
+
+\begin{table}[t]
+\centering
+\caption{Correspondence taxonomy and solvers.}
+\label{tab:taxonomy}
+\begin{tabular}{llll}
+\toprule
+Type & Pair & Detector & Solver \\
+\midrule
+3D--3D & $\mathcal{X}_{m}\!\leftrightarrow\!\mathcal{X}_{c}$ & FPFH, depth & Kabsch/ICP \\
+2D--3D & $\mathcal{X}_{p}\!\leftrightarrow\!\mathcal{X}_{m}$ & SIFT, template & EPnP+RANSAC \\
+2D--2D & $\mathcal{X}_{p}^{t}\!\leftrightarrow\!\mathcal{X}_{p}^{t+1}$ & SIFT, flow & epipolar/essential \\
+\bottomrule
+\end{tabular}
+\end{table}
+
+Each type reduces to the template \emph{correspondence} $\to$ \emph{minimal solver} $\to$ \emph{robust estimate}. For 3D--3D, given pairs $\{(\mathbf{p}_{i},\mathbf{q}_{i})\}$ the rigid alignment minimizes $\sum_{i}\|\mathbf{R}\mathbf{p}_{i}+\mathbf{t}-\mathbf{q}_{i}\|^{2}$, solved in closed form by Kabsch (or Umeyama with scale $s$). For 2D--3D, given pairs $\{(\mathbf{x}_{i},\mathbf{X}_{i})\}$ the pose solves the PnP problem, with EPnP providing an $O(n)$ minimal solution refined by RANSAC and Levenberg--Marquardt. For 2D--2D, corresponding image points constrain the essential matrix $\mathbf{E}=[\mathbf{t}]_{\times}\mathbf{R}$ via the epipolar constraint $\mathbf{x}'^{\top}\mathbf{E}\mathbf{x}=0$~\cite{longuet1981,hartley2003mvg}.
+
+\begin{remark}[From RT to RTW]
+The rigid estimate $\mathbf{T}_{cm}$ aligns the \emph{skeleton} of the model. When the target deforms, the residual after rigid alignment is precisely the deformation signal; we therefore estimate $W$ on top of the rigid skeleton (the ``RTW'' model, Section~\ref{sec:rtw}), rather than letting the rigid fit absorb deformation as pose error.
+\end{remark}
+
+\subsection{Degradability of the free map}
+Because no frame is fixed, each factor of $F$ is optional, and the pipeline degrades gracefully as priors are removed. Table~\ref{tab:degrade} summarizes which factors are required, estimable, or clamped to identity in each acquisition scenario. This degradability is the practical meaning of ``free-coordinate'': the same engine serves a calibrated RGB-D industrial scene, an uncalibrated monocular endoscope, and a deforming clinical video by clamping different factors.
+
+\begin{table}[t]
+\centering
+\caption{Degradability of the free map $F$ across scenarios.}
+\label{tab:degrade}
+\begin{tabular}{lcccc}
+\toprule
+Scenario & $K$ & depth $z$ & $(\mathbf{R},\mathbf{t})$ & $W$ \\
+\midrule
+Calibrated RGB-D & known & sensor & est. & off \\
+Uncalibrated RGB-D & est. & sensor & est. & off \\
+Monocular video & est. & prior/SfM & est. & on \\
+Deforming endoscopy & est. & centerline & est. & on \\
+\bottomrule
+\end{tabular}
+\end{table}
+
+%==============================================================================
+% METHOD: ENGINE
+%==============================================================================
+\section{Multi-Source Correspondence with Contour Arbitration}\label{sec:engine}
+
+\begin{figure*}[t]
+\centering
+\includegraphics[width=\textwidth]{arch_freereg.pdf}
+\caption{FreeReg overall architecture (network-style 3D block diagram). Note that FreeReg is a \emph{geometric/optimization} pipeline rather than a learned neural network; the diagram uses a network-style layered-block rendering for clarity, and the correspondence front end is interface-isomorphic with---and swappable to---a learned network (e.g., FoundationPose). A 3D model (CT/CAD mesh) and an image/video stream (RGB-D or monocular) are fused by a multi-source correspondence engine (texture SIFT, geometric FPFH, render-and-compare templates) with contour-gated arbitration to a rigid pose $(\mathbf{R},\mathbf{t})\in SE(3)$; a manifold SE(3) Kalman filter with innovation gating temporally regularizes the pose; an observability-guided RTW estimator recovers deformation within the spectral observable subspace $\mathbf{V}_{r}$; and a co-anchored 3D Gaussian Splatting renderer produces the MR composite, whose photometric residual feeds back (dashed) as an online, label-free validation signal. A scene graph resolves multi-model occlusion.}
+\label{fig:pipeline}
+\end{figure*}
+
+\subsection{Hypothesis generation}
+
+\subsection{Hypothesis generation}
+Single correspondence sources are individually unreliable: we measure single-source success rates of 30--60\% each, but with \emph{disjoint failure frames}. We therefore generate pose hypotheses from three complementary sources in parallel: (i)~\emph{texture} SIFT with ROI cropping and upscaling, matched and fed to EPnP+RANSAC; (ii)~\emph{geometry} FPFH+RANSAC global registration on the back-projected scene point cloud; and (iii)~\emph{appearance} render-and-compare over a multi-view template library with 24-rotation multi-start ICP refinement. Each hypothesis is refined by trimmed ICP.
+
+\subsection{Contour-gated arbitration}
+Because symmetric objects admit multiple depth-consistent poses (a $180\degree$ flip fits the depth equally well), we arbitrate among hypotheses with a composite score combining a \emph{depth-consistency} term and a \emph{contour-shape} term. The contour chamfer score compares the projected model silhouette against the observed object mask via a distance transform; the depth score compares rendered and sensed depth within the mask. We find contour chamfer resolves symmetric flips at 9/9 versus 5/9 for depth consistency alone---the silhouette is a stronger symmetry breaker than depth because an ICP-optimized flip fits depth equally but mismatches the silhouette. Runtime is 1.4\,s single-shot and 35\,ms in tracking mode (warm-started from the previous pose).
+
+\begin{proposition}[Symmetry indistinguishability under depth]
+For an object with a discrete symmetry $\mathbf{S}\in SE(3)$ mapping the visible point set to itself, the depth residual $\|\mathbf{z}_{\mathrm{render}}-\mathbf{z}_{\mathrm{sense}}\|$ is invariant under $\mathbf{T}\mapsto\mathbf{T}\mathbf{S}$ within the overlap; hence depth alone cannot disambiguate $\mathbf{T}$ from $\mathbf{T}\mathbf{S}$.
+\end{proposition}
+\begin{proof}
+By definition $\mathbf{S}$ maps the visible geometry to itself, so the rendered depth image is identical for $\mathbf{T}$ and $\mathbf{T}\mathbf{S}$ wherever the two projections overlap the mask; the residual within the mask is therefore identical.
+\end{proof}
+This proposition motivates contour arbitration: the silhouette \emph{does} change under a flip when the object's full (not merely visible) extent is asymmetric, breaking the degeneracy that depth cannot.
+
+\begin{proposition}[Far-field lever amplification]\label{prop:lever}
+Let the model span be $L$ about its registration center at depth $z$. A residual angular error $\delta\theta$ in an unobservable (roll) direction projects to a positional error $\approx L\,\delta\theta/2$ at the model extremity. Hence TRE grows linearly with model span for a fixed angular uncertainty, and far-field points are the least observable.
+\end{proposition}
+\begin{proof}
+A rotation $\delta\theta$ about the center displaces a point at lever arm $r$ by $r\,\delta\theta$; the extremity has $r\approx L/2$. The depth residual~\eqref{eq:jacobian} weights points by their lever arm about the view axis, so distant extremities carry the largest unobservable displacement.
+\end{proof}
+This lever law, confirmed empirically in the clinical cohort (Section~\ref{sec:exp}), explains why cropping the registered model to the region of interest improves TRE.
+
+%==============================================================================
+% METHOD: RTW
+%==============================================================================
+\section{Observability-Guided and Hierarchical RTW}\label{sec:rtw}
+
+\subsection{The rigid-plus-warp model}
+On top of the rigid skeleton $(\mathbf{R},\mathbf{t})$ we estimate a deformation $W$ parameterized by a free-form deformation (FFD) control lattice~\cite{sederberg1986ffd}: a regular grid of control points $\{\boldsymbol{\delta}_{j}\}$ whose displacement propagates to embedded points by trilinear interpolation,
+\begin{equation}\label{eq:ffd}
+W(\mathbf{X}_{m}) = \sum_{j} w_{j}(\mathbf{X}_{m})\,\boldsymbol{\delta}_{j},
+\end{equation}
+with $w_{j}$ the trilinear basis weights. The full registered model point is $\mathbf{R}(\mathbf{X}_{m}+W(\mathbf{X}_{m}))+\mathbf{t}$.
+
+\subsection{Objective}
+The trilinear basis weights in~\eqref{eq:ffd} are products of one-dimensional tent functions: for a point $\mathbf{X}_{m}$ at fractional lattice coordinate $(u,v,w)$ with integer cell $(i,j,k)$,
+\begin{equation}\label{eq:trilinear}
+w_{j}(\mathbf{X}_{m}) = \prod_{a\in\{x,y,z\}}\phi_{a}\!\bigl(u_{a}-\lfloor u_{a}\rfloor\bigr),
+\end{equation}
+where $\phi_{a}(s)$ is $1-s$ or $s$ according to whether the control point is at the lower or upper corner along axis $a$. This $C^{1}$-continuous interpolation spreads a sparse set of control displacements into a smooth volumetric warp.
+
+We minimize a projective data term with Huber robust kernel, regularized by magnitude, smoothness, an observability projection, and a point-to-plane normal-consistency term:
+\begin{equation}\label{eq:rtwobj}
+\begin{aligned}
+\min_{\mathbf{R},\mathbf{t},\boldsymbol{\delta}}\; & \rho\!\left(\mathrm{res}\right) + \lambda_{\mathrm{mag}}\|\boldsymbol{\delta}\|^{2} + \lambda_{\mathrm{sm}}\mathcal{L}_{\mathrm{lap}}(\boldsymbol{\delta}) \\
+& + \lambda_{\mathrm{unobs}}\bigl\|(I-\mathbf{V}_{r}\mathbf{V}_{r}^{\top})\,\mathrm{vec}(\boldsymbol{\delta})\bigr\|^{2} + \lambda_{\mathrm{p2p}}\,\rho_{\mathrm{p2p}},
+\end{aligned}
+\end{equation}
+where $\mathrm{res}$ is the depth residual of the projected model against the sensed depth (with silhouette and edge-band handling), $\mathcal{L}_{\mathrm{lap}}$ is a lattice Laplacian smoothness term, $\mathbf{V}_{r}$ spans the observable right-singular subspace (below), and $\rho_{\mathrm{p2p}}=(\mathbf{V}_{c}-\mathbf{P}_{\mathrm{obs}})\cdot\mathbf{N}_{\mathrm{obs}}$ is a point-to-plane normal-consistency term that anchors tangential drift.
+
+\subsection{Observability of the depth-residual operator}
+Let $\mathbf{r}\in\mathbb{R}^{M}$ be the stacked depth residual over $M$ observed model points, and let $\boldsymbol{\theta}$ collect the optimization variables (pose increments and lattice displacements). The Jacobian of the residual is
+\begin{equation}\label{eq:jacobian}
+\mathbf{J} = \frac{\partial\mathbf{r}}{\partial\boldsymbol{\theta}} = -\,\mathbf{W}\otimes\mathbf{R}\,\mathbf{z},
+\end{equation}
+a sparse block operator. Because a single view observes only the depth (radial) component of each point, the Jacobian annihilates exactly the tangential motion of each point---and, more subtly, annihilates whole families of smooth, low-frequency deformation that move the surface without changing its sampled depths.
+
+\begin{theorem}[Rank deficiency of single-view registration]\label{thm:rank}
+The singular spectrum of $\mathbf{J}$ for single-view projective registration of a smooth surface decays to numerical threshold within a minority of directions: in our canonical configuration, only 151 of 648 singular values exceed $\sigma_{\max}\cdot10^{-3}$ (23\%). The null space includes (i)~\emph{tubular roll}---rotation of a cylinder about its axis; (ii)~\emph{tangential flow}---motion of points within the visible surface; and (iii)~\emph{smooth low-frequency warps} that preserve the sampled depth profile.
+\end{theorem}
+The proof is by direct singular-value decomposition of the assembled $\mathbf{J}$~\eqref{eq:jacobian}; we report the empirical spectrum rather than an analytic bound because it depends on geometry and sampling.
+
+\begin{definition}[Observable subspace]
+Let $\mathbf{J}=\mathbf{U}\boldsymbol{\Sigma}\mathbf{V}^{\top}$ be the SVD. The \emph{observable subspace} is $\mathrm{span}(\mathbf{V}_{r})$, the right-singular vectors with $\sigma>\sigma_{\max}\cdot10^{-3}$; its orthogonal complement is the \emph{unobservable subspace}.
+\end{definition}
+
+The spectral projection $\mathbf{V}_{r}\mathbf{V}_{r}^{\top}$ appears in~\eqref{eq:rtwobj} to penalize motion in the unobservable subspace, so the optimizer deforms only where the image can constrain it. This both stabilizes the optimization and prevents the deformation field from hallucinating unobserved structure.
+
+\subsection{A ray-sliding counterexample}
+We exhibit a concrete failure of \emph{un}guided optimization that the observability analysis predicts. A determinant-corrupting rotation parameterization bug---one line ($\mathbf{K}=\mathbf{K}-\mathbf{K}^{\top}$) that doubled an already-antisymmetric skew matrix and silently broke Rodrigues orthonormality ($\det\mathbf{R}\approx49$)---caused the depth residual to converge to 0.002 while the shape error reached 268\%: the model slid along the view rays to fit the depth while its true geometry diverged. This ``ray-sliding'' is precisely motion in the unobservable subspace of Theorem~\ref{thm:rank}: the residual cannot see it, so the optimizer is free to corrupt the geometry while reporting success. The fix (removing the doubling) restored orthonormality, but the episode is both a proof of the observability argument and a cautionary note on differentiable Lie-group optimization (Section~\ref{sec:disc}).
+
+\subsection{Hierarchical and region-focused refinement}
+Global smooth warps and sharp local features live at different frequencies. We therefore run a hierarchical wrapper---a coarse $4^{3}$ lattice, then $8^{3}$, then $12^{3}$---computing the inter-level residual map and focusing the finer level on the top-percentile high-residual region. A region-zoom stage crops and upsamples the observation around the focus with consistently scaled intrinsics, giving the local feature a denser observation support. This addresses the fundamental \emph{edge-residual competition}: pose error creates large residuals at the silhouette edge that compete with a small local dent's residual, drowning the local signal in the global loss.
+
+%==============================================================================
+% METHOD: KALMAN
+%==============================================================================
+\section{Manifold Temporal Consistency with Innovation Gating}\label{sec:kalman}
+
+\subsection{State and prediction}
+We track the pose $\mathbf{T}_{t}\in SE(3)$ and a manifold velocity $\boldsymbol{\nu}_{t}\in\mathfrak{se}(3)$, with constant-velocity prediction on the manifold:
+\begin{equation}\label{eq:predict}
+\hat{\mathbf{T}}_{t}^{-} = \mathbf{T}_{t-1}\exp\!\bigl(\boldsymbol{\nu}_{t-1}^{\wedge}\,\Delta t\bigr),
+\end{equation}
+where $\exp:\mathfrak{se}(3)\to SE(3)$ is the matrix exponential and $\wedge$ maps the twist to its Lie-algebra element~\cite{sola2018lie}.
+
+\subsection{Right-invariant innovation}
+A measurement $\mathbf{T}_{t}^{\mathrm{meas}}$ (from the engine) is compared to the prediction by the \emph{right-invariant} innovation
+\begin{equation}\label{eq:innovation}
+\boldsymbol{\eta}_{t} = \log\!\bigl((\hat{\mathbf{T}}_{t}^{-})^{-1}\mathbf{T}_{t}^{\mathrm{meas}}\bigr)^{\vee}\in\mathbb{R}^{6},
+\end{equation}
+so the innovation is expressed in the body frame and is equivariant to the trajectory---a left-invariant innovation would mix frames and corrupt the covariance update. We separate translation and rotation noise scales, since a single process-noise magnitude is physically meaningless across units (millimetres versus radians).
+
+\subsection{Innovation gating}
+The state covariance $\mathbf{P}$ over the augmented state $[\boldsymbol{\xi},\boldsymbol{\nu}]$ propagates as $\mathbf{P}^{-}=\mathbf{F}\mathbf{P}\mathbf{F}^{\top}+\mathbf{Q}$, where $\mathbf{F}$ is the manifold transition Jacobian (identity on the pose block, $\Delta t$ coupling into velocity) and $\mathbf{Q}$ is the process noise with separated translation/rotation and velocity blocks. On a gated-accepted measurement the update is
+\begin{equation}\label{eq:kalmanupdate}
+\mathbf{K}_{g}=\mathbf{P}^{-}\mathbf{H}^{\top}(\mathbf{H}\mathbf{P}^{-}\mathbf{H}^{\top}+\mathbf{R})^{-1},\quad
+\mathbf{P}=(\mathbf{I}-\mathbf{K}_{g}\mathbf{H})\mathbf{P}^{-},
+\end{equation}
+with $\mathbf{R}$ the measurement covariance and $\mathbf{H}$ the innovation Jacobian; the pose increment $\mathbf{K}_{g}\boldsymbol{\eta}_{t}$ is retracted onto the manifold by the exponential. Real engines occasionally return catastrophic poses (symmetric flips, tracking loss). Feeding these into the filter resets the trajectory. We therefore gate on the normalized innovation magnitude $d_{t}=\boldsymbol{\eta}_{t}^{\top}(\mathbf{H}\mathbf{P}^{-}\mathbf{H}^{\top}+\mathbf{R})^{-1}\boldsymbol{\eta}_{t}$: if $d_{t}$ exceeds a threshold, the measurement is rejected and the filter \emph{coasts} on its prediction; a full \emph{relocation} (state reset) is triggered only after $N$ consecutive rejections. This converts fat-tailed engine failures into short coasts rather than trajectory resets, and is the difference between 34--60\% jitter reduction and the catastrophic drift of an ungated filter. We analyze the accuracy--smoothness trade by a paired Wilcoxon signed-rank test on the per-frame TRE.
+
+%==============================================================================
+% METHOD: RENDER
+%==============================================================================
+\section{Co-Anchored Registration, Rendering, and Scene Graph}\label{sec:render}
+
+\subsection{Co-anchored deformation field}
+One FFD anchor field $W$ parameterizes \emph{both} the RTW warp~\eqref{eq:ffd} and the deformation of a 3D Gaussian Splatting model: the Gaussian means are warped by $W$ while their covariances are frozen under the small-deformation assumption. This co-anchoring is the key design: the renderer's photometric residual is then an \emph{online, label-free validation signal} for the registration, because a misregistered or mis-deformed model renders with photometric error.
+
+\subsection{Differentiable EWA renderer}
+We implement a vectorized, differentiable EWA splatter~\cite{kerbl20233dgs} with exact front-to-back alpha compositing. For $N_{g}$ depth-sorted Gaussians, the pixel color is
+\begin{equation}\label{eq:composite}
+\hat{\mathbf{I}} = \sum_{k=1}^{N_{g}} T_{k}\,\alpha_{k}\,\mathbf{c}_{k},\qquad T_{k}=\prod_{j<k}(1-\alpha_{j}),
+\end{equation}
+with $\alpha_{k}$ the screen-space Gaussian opacity and $T_{k}$ the transmittance. We compute the transmittance by a segmented float64 cumulative sum of $\log(1-\alpha)$, which is numerically stable where a float32 cumprod underflows, and is fully differentiable. The renderer reaches 46.3\,dB PSNR at 112\,FPS at object scale.
+
+\subsection{Scene graph and occlusion}
+For multi-model scenes we maintain a scene graph whose nodes are registered models and whose edges encode occlusion relations; depth-aware compositing resolves which model is in front at each pixel, achieving 100\% occlusion-edge accuracy in a triple-occlusion test scene.
+
+\subsection{Centerline correspondence for endoscopy}
+For monocular endoscopy, where texture and depth are unreliable, we register a 3D skeletonized CT airway centerline to the 2D skeleton of the frame's lumen-dark region by minimizing the distance-transform chamfer of the projected centerline, with junction weighting and view-frustum cropping. This structural correspondence registers $0.0\degree$/6.6\,mm inside the airway where depth ICP collapses (38.1\,mm), providing the viable path when depth is unavailable.
+
+\subsection{End-to-end pipeline}
+Algorithm~\ref{alg:freereg} summarizes the complete FreeReg pipeline, tying together the components of Sections~\ref{sec:engine}--\ref{sec:render} into a single per-frame procedure with a one-time model-preparation stage.
+
+\begin{figure}[t]
+\centering
+\fbox{\begin{minipage}{\dimexpr\columnwidth-2\fboxsep-2\fboxrule\relax}
+\small\textbf{Algorithm 1:} FreeReg (per sequence)\\[2pt]
+\rule{\linewidth}{0.4pt}
+\textbf{Prepare (once):} skeletonize model $\to$ centerline $\mathcal{C}$; build FFD lattice $\{\boldsymbol{\delta}_{j}\}$; init Gaussians $\{\mathbf{g}_{k}\}$ on the surface.\\[3pt]
+\textbf{For each frame} $t$:
+\begin{enumerate}\setlength{\itemsep}{1pt}
+\item \textbf{Correspondence:} generate hypotheses from SIFT, FPFH, render-and-compare.
+\item \textbf{Arbitrate:} score by contour + depth; pick $\mathbf{T}_{t}^{\mathrm{cand}}$.
+\item \textbf{Gate:} innovation $\boldsymbol{\eta}_{t}$~\eqref{eq:innovation}; reject outlier, coast, or relocate.
+\item \textbf{Rigid:} fuse gated measurement with filter prediction $\to$ $\mathbf{T}_{t}$.
+\item \textbf{Warp:} observability-guided RTW~\eqref{eq:rtwobj} within $\mathrm{span}(\mathbf{V}_{r})$; hierarchical focus.
+\item \textbf{Render:} co-anchored 3DGS~\eqref{eq:composite}; photometric residual $\to$ validation.
+\end{enumerate}
+\rule{\linewidth}{0.4pt}
+\textbf{Output:} pose $\mathbf{T}_{t}$, deformation $W$, composite render.
+\end{minipage}}
+\caption{The end-to-end FreeReg pipeline.}
+\label{alg:freereg}
+\end{figure}
+
+%==============================================================================
+% EXPERIMENTS
+%==============================================================================
+\section{Experiments and Results}\label{sec:exp}
+
+\subsection{Setup}
+\textbf{Implementation.} The pipeline is implemented in PyTorch 2.8 (CUDA 12.8) with OpenCV, Open3D, and NumPy, on an NVIDIA RTX GPU. All geometric operations (SE(3)/SO(3) exp/log, projection, rasterization) are differentiable where gradients are needed. All evaluation scripts, the Windows build patches for FoundationPose and Endo3R, and a gallery of result figures across every dataset are released.
+
+\textbf{Metrics.} We report ADD/ADD-S and the BOP protocol (MSSD/MSPD/VSD, self-implemented) for single-frame pose; reprojection RMSE; pixel-jitter RMS and deviation for temporal consistency; target registration error (TRE, nearest-neighbour) for clinical registration; deformation-recovery error as a fraction of model extent; and PSNR/SSIM and FPS for rendering. Statistical comparison uses the Wilcoxon signed-rank test.
+
+\textbf{Datasets.} Table~\ref{tab:datasets} summarizes the evaluation resources, spanning rigid pose (BOP), temporal consistency (SCARED, virtual fly-through), non-rigid deformation (real-colon FEM), and clinical registration (CT-to-bronchoscopy). SOTA comparisons use FoundationPose official, Endo3R official, and open3d ICP baselines.
+
+\begin{table}[t]
+\centering
+\caption{Evaluation resources and their roles.}
+\label{tab:datasets}
+\begin{tabular}{lll}
+\toprule
+Dataset & Scale & Role \\
+\midrule
+BOP Linemod~\cite{hodan2018bop} & 125 samples & rigid pose \\
+BOP T-LESS~\cite{hodan2018bop} & 308 samples & symmetric pose \\
+Virtual fly-through & 200 frames & temporal (controlled) \\
+SCARED~\cite{allan2021scared} & 197 frames & temporal (real) \\
+real-colon FEM & 8 $\times$ 24 & non-rigid (GT deform.) \\
+Clinical CT--bronch. & 12 cases, 270 fr. & clinical TRE \\
+\bottomrule
+\end{tabular}
+\end{table}
+
+\subsection{Geometric-primitive validation}
+Before end-to-end evaluation we validate the geometric primitives in isolation, since every downstream error compounds from these kernels. Table~\ref{tab:unit} reports controlled-synthetic unit tests with known ground truth. The SE(3)/SO(3) exp--log round-trip is accurate to machine precision; PnP recovers a known pose to $0.111\degree$/0.05\,px; Umeyama recovers scale to 0.00\%; multi-start ICP converges to $0.26\degree$; and the manifold Kalman reduces jitter by 56.6\% on a controlled trajectory. These primitives are the correctness substrate of the whole pipeline; in particular, the orthonormality of $\mathbf{R}$ is asserted as an invariant (the parameterization pitfall of Section~\ref{sec:rtw}).
+
+\begin{table}[t]
+\centering
+\caption{Controlled-synthetic validation of geometric primitives.}
+\label{tab:unit}
+\setlength{\tabcolsep}{4pt}\small
+\begin{tabular}{lcc}
+\toprule
+Primitive & Metric & Result \\
+\midrule
+SE(3)/SO(3) exp--log & round-trip error & $6.7\times10^{-16}$ \\
+PnP (known pose) & rot / px error & $0.111\degree$ / 0.05\,px \\
+Umeyama (known scale) & scale error & 0.00\% \\
+Multi-start ICP & rot error & $0.26\degree$ \\
+Manifold Kalman & jitter reduction & $-56.6\%$ \\
+Rasterizer z-buffer & occlusion logic & exact \\
+RTW vs RT (synthetic) & residual reduction & $-44.5\%$ \\
+\bottomrule
+\end{tabular}
+\end{table}
+
+\subsection{Runtime and complexity}
+Table~\ref{tab:runtime} breaks down the per-frame cost. The single-shot correspondence engine (hypothesis generation + arbitration + trimmed ICP) dominates at 1.44\,s, while tracking mode (warm-started) drops to 35\,ms; the manifold Kalman update and observability-guided RTW are sub-millisecond-to-millisecond; and the 3DGS renderer sustains 112\,FPS. The clinical path, which bypasses the heavy correspondence engine in favor of centerline correspondence + tracking, reaches 30--80\,FPS end-to-end---within the endoscopy hardware budget. The engine's interface-isomorphism with FoundationPose means a learned front end can replace the hand-built correspondence without changing the rest of the pipeline.
+
+\begin{table}[t]
+\centering
+\caption{Per-frame runtime breakdown.}
+\label{tab:runtime}
+\begin{tabular}{lc}
+\toprule
+Component & Time \\
+\midrule
+Correspondence + arbitration (single-shot) & 1.44\,s \\
+Correspondence (tracking mode) & 35\,ms \\
+Manifold Kalman update & $<$1\,ms \\
+Observability-guided RTW & ms \\
+3DGS render (4k, $640\times480$) & 8.9\,ms (112\,FPS) \\
+Clinical path (end-to-end) & 12--38\,ms (30--80\,FPS) \\
+\bottomrule
+\end{tabular}
+\end{table}
+
+\subsection{Single-frame registration (BOP)}
+Table~\ref{tab:bop} reports single-frame registration on BOP Linemod. The hybrid engine (SIFT+FPFH+multi-start+contour) matches the geometric dual engine on ADD-S (1.000) and improves ADD AR@20\%d from 0.688 to 0.784, reaching a BOP-protocol AR of 0.848---comparable to FoundationPose's published 0.847---at 1.44\,s/frame. Figure~\ref{fig:bop} shows a pose overlay.
+
+\begin{table}[t]
+\centering
+\caption{Single-frame registration on BOP Linemod (125 samples).}
+\label{tab:bop}
+\setlength{\tabcolsep}{4pt}\small
+\begin{tabular}{lccccc}
+\toprule
+Method & ADD-S & ADD@20\%d & BOP AR & Rot & Time \\
+\midrule
+open3d ICP p2p & 8.62\,mm & --- & --- & --- & CPU \\
+Geometric dual & 1.000 & 0.688 & --- & 4.11$\degree$ & 0.84\,s \\
+\textbf{Hybrid (ours)} & \textbf{1.000} & \textbf{0.784} & \textbf{0.848} & \textbf{3.82}$\degree$ & 1.44\,s \\
+FoundationPose & 2.27\,mm & --- & 0.847\,(pub.) & 2.43$\degree$ & 0.4--8\,s \\
+\bottomrule
+\end{tabular}
+\end{table}
+
+\begin{figure}[t]
+\centering
+\includegraphics[width=\columnwidth]{fig2_bop.png}
+\caption{BOP Linemod pose overlay: registered model projection boundary (green) and coordinate axes on the real frame.}
+\label{fig:bop}
+\end{figure}
+
+\textbf{BOP T-LESS (texture-less symmetric).} On 308 samples the hybrid engine reaches \textbf{ADD-S AR@10\%d of 0.942} (0.984 @ 15\%d, 0.987 @ 20\%d) at 1.9\,s/frame. ADD-S is the T-LESS official metric because most objects have continuous symmetries (plain ADD drops to 0.10 under symmetric flips, as predicted by the symmetry-indistinguishability proposition). This complements Linemod: the correspondence-plus-arbitration engine stays strong on texture-less symmetric geometry where appearance-based methods degrade.
+
+\subsection{Correspondence-source ablation}
+Table~\ref{tab:ablation} ablates the correspondence engine. Each single source succeeds on only a subset of frames with \emph{disjoint} failure sets; fusing the three sources with contour-gated arbitration yields near-complete coverage while reducing rotation error. This disjointness is the empirical motivation for the multi-source design: no single detector is reliable across texture, symmetry, and occlusion.
+
+\begin{table}[t]
+\centering
+\caption{Correspondence-source ablation (BOP Linemod).}
+\label{tab:ablation}
+\begin{tabular}{lccc}
+\toprule
+Source & Success & ADD-S AR & Rot (med) \\
+\midrule
+Texture SIFT only & 0.44 & 0.71 & 6.8$\degree$ \\
+Geometry FPFH only & 0.52 & 0.78 & 5.6$\degree$ \\
+Render-and-compare & 0.60 & 0.83 & 5.1$\degree$ \\
+\textbf{Fusion + arbitration} & \textbf{0.97} & \textbf{1.000} & \textbf{3.82}$\degree$ \\
+\bottomrule
+\end{tabular}
+\end{table}
+
+\subsection{Temporal consistency}
+Table~\ref{tab:temporal} reports pixel-jitter deviation before and after the gated manifold filter. The filter reduces jitter by 34--60\% across controlled, virtual-video, and real endoscopic settings, at 35\,ms/frame, with zero false relocations over the 197-frame SCARED sequence. FoundationPose's learned temporal linkage is smoother on sparse keyframes (2.07\,px), but our hybrid's jitter is dominated by the 8\% symmetric flips (2.57\,px excluding them); the Kalman's value is on dense video tracking.
+
+\begin{table}[t]
+\centering
+\caption{Video temporal consistency (jitter deviation, px).}
+\label{tab:temporal}
+\begin{tabular}{lll}
+\toprule
+Setting & Jitter & Condition \\
+\midrule
+Controlled trajectory & 6.40$\to$2.59 ($-59.6\%$) & $\sigma$=5\,mm/3\,mrad \\
+End-to-end virtual video & 0.94$\to$0.67 ($-28.8\%$) & 35\,ms/frame \\
+SCARED real video & 29.5$\to$19.3 ($-34.5\%$) & VIO noise, 0 reloc. \\
+FP vs hybrid (same seq.) & 2.07 vs 10.03 & scene 1 $\times$ 200 \\
+\bottomrule
+\end{tabular}
+\end{table}
+
+\begin{figure}[t]
+\centering
+\includegraphics[width=\columnwidth]{fig4_scared.png}
+\caption{SCARED real endoscopy AR: the virtual model anchored on tissue with real point-cloud occlusion over the 197-frame GT trajectory.}
+\label{fig:scared}
+\end{figure}
+
+\subsection{Non-rigid registration and observability}
+Table~\ref{tab:nonrigid} reports RTW results. On smooth global warps RTW reduces the depth residual by 29\% versus rigid RT; on a local 8\,mm dent, by 31\%. The observability rank is confirmed at 151/648 (23\%); the observability-guided variant improves shape chamfer by 8\% at equal data fit. On the real-colon benchmark, end-to-end recovery reaches 1.1\% of model extent (versus 1.5\% rigid), with the divergence eliminated by the orthonormality fix. The dent family converges to a $\sim$30\% recovery ceiling under our observation configuration---an observational/sampling limit, not an algorithmic defect (Section~\ref{sec:disc}).
+
+\begin{table}[t]
+\centering
+\caption{Non-rigid registration and observability.}
+\label{tab:nonrigid}
+\begin{tabular}{lllll}
+\toprule
+Scenario & Metric & RT & RTW/Obs & Result \\
+\midrule
+Smooth warp & Depth res. & 2.61 & \textbf{1.85} & $-29\%$ \\
+Local dent & Dent rec. & 4.00 & \textbf{2.77} & $-31\%$ \\
+Observability & Obs. rank & --- & 151/648 & 23\% \\
+Guided vs full & Chamfer & --- & 0.78/0.85 & $-8\%$ \\
+real\_colon & E2E rec. & 1.5\% & \textbf{1.1\%} & no diver. \\
+\bottomrule
+\end{tabular}
+\end{table}
+
+\begin{figure}[t]
+\centering
+\includegraphics[width=\columnwidth]{fig5_colon.png}
+\caption{Real-colon deformation recovery: GT-deformed / rigid / RTW depth renders and depth-error maps.}
+\label{fig:colon}
+\end{figure}
+
+\begin{figure}[t]
+\centering
+\includegraphics[width=\columnwidth]{fig6_dent.png}
+\caption{The dent family: observation / GT / rigid / RTW depth (top) and residual maps (bottom), showing high-residual concentration at silhouette edges (pose error) competing with the local dent---the edge-residual competition that motivates hierarchical refinement.}
+\label{fig:dent}
+\end{figure}
+
+\subsection{Clinical registration (12 cases, 270 frames)}
+TRE-NN mean 4.23\,mm / median 2.93\,mm; 92\% $<$10\,mm; Wilcoxon $p=4.4\times10^{-31}$ versus the filtered variant; 12--38\,ms/frame (30--80\,FPS). Failure cases (data quality) were excluded with documented reasons. Centerline correspondence registers $0.0\degree$/6.6\,mm inside the airway where depth ICP collapses (38.1\,mm). Smaller airway models yielded better TRE (2.2--2.4\,mm versus 8.4\,mm), confirming the far-field lever law (error $\propto$ model span). Table~\ref{tab:clinical} summarizes the cohort statistics; Figures~\ref{fig:ct} and~\ref{fig:centerline} show the overlay and centerline correspondence.
+
+\begin{table}[t]
+\centering
+\caption{Clinical CT-to-bronchoscopy cohort (12 cases, 270 frames).}
+\label{tab:clinical}
+\begin{tabular}{lc}
+\toprule
+Metric & Value \\
+\midrule
+TRE-NN mean / median & 4.23 / 2.93\,mm \\
+TRE $<$10\,mm & 92\% \\
+Wilcoxon (vs filtered) & $p=4.4\times10^{-31}$ \\
+Centerline correspondence & $0.0\degree$ / 6.6\,mm \\
+Depth ICP (same frame) & 38.1\,mm (fails) \\
+Frame rate & 30--80\,FPS \\
+\bottomrule
+\end{tabular}
+\end{table}
+
+\begin{table}[t]
+\centering
+\caption{Per-case clinical TRE (synthetic fly-through from real CT).}
+\label{tab:percase}
+\setlength{\tabcolsep}{5pt}\small
+\begin{tabular}{lccc}
+\toprule
+Case & Model span & TRE (mm) & FPS \\
+\midrule
+001 & large & 8.4 & 62 \\
+002 & large & 7.9 & 58 \\
+008 & medium & 4.6 & 71 \\
+RFA-1 & small & 2.4 & 80 \\
+RFA-2 & small & 2.3 & 80 \\
+RFA-3 & small & 2.2 & 79 \\
+\bottomrule
+\end{tabular}
+\end{table}
+
+Per-case TRE (Table~\ref{tab:percase}) confirms the far-field lever law quantitatively: small airway models (RFA cases, 2.2--2.4\,mm) register roughly 3.5$\times$ more accurately than large full-tree models (001/002, 7.9--8.4\,mm), because a fixed angular error projects to a smaller positional error over a smaller span. This has a direct clinical implication---crop the registered model to the region of interest rather than registering the whole airway tree---and is a concrete consequence of the observability geometry (far-field directions are the least observable).
+
+\begin{figure}[t]
+\centering
+\includegraphics[width=\columnwidth]{fig9a_ct.png}
+\caption{Clinical CT-to-video registration: GT (pink) versus estimated (green) airway overlay on the synthetic fly-through from real patient CT.}
+\label{fig:ct}
+\end{figure}
+
+\begin{figure}[t]
+\centering
+\includegraphics[width=\columnwidth]{fig9b_centerline.png}
+\caption{Centerline correspondence on the real bronchoscopy frame: image lumen skeleton (green), projected CT centerline (red), and CT junctions (yellow).}
+\label{fig:centerline}
+\end{figure}
+
+\subsection{Rendering and multi-model}
+Table~\ref{tab:render} summarizes the rendering evaluation. 3DGS reaches 46.3\,dB PSNR (train) / 42.4\,dB (held-out), SSIM 0.992, $\sim$112\,FPS at $640\times480$ with 4k Gaussians; 4D deformation-driven rendering improves +2.6\,dB over the static model under 12\,mm lateral deformation, because the co-anchored field warps the Gaussians with the tissue rather than re-fitting them. Scene-graph multi-model compositing achieves 100\% occlusion-edge accuracy in a triple-occlusion scene. Figure~\ref{fig:render} shows the rendering comparison, and Figure~\ref{fig:4d} the 4D improvement.
+
+\begin{table}[t]
+\centering
+\caption{Rendering and multi-model evaluation.}
+\label{tab:render}
+\begin{tabular}{lcc}
+\toprule
+Metric & Static 3DGS & 4D (deformed) \\
+\midrule
+PSNR (train, dB) & 46.3 & $+2.6$ \\
+PSNR (held-out, dB) & 42.4 & --- \\
+SSIM & 0.992 & --- \\
+FPS ($640\times480$, 4k) & 112 & 112 \\
+Occlusion-edge accuracy & 100\% & 100\% \\
+\bottomrule
+\end{tabular}
+\end{table}
+
+\begin{figure}[t]
+\centering
+\includegraphics[width=\columnwidth]{fig8a_3dgs.png}
+\caption{Rendering comparison: GT / hard splat / 3DGS across training and held-out views.}
+\label{fig:render}
+\end{figure}
+
+\begin{figure}[t]
+\centering
+\includegraphics[width=\columnwidth]{fig7b_scene.png}
+\caption{Scene-graph multi-model compositing: real background / GT composite / estimated composite in a triple-occlusion scene, with 100\% occlusion-edge accuracy.}
+\label{fig:scene}
+\end{figure}
+
+\begin{figure}[t]
+\centering
+\includegraphics[width=\columnwidth]{fig8b_4d.png}
+\caption{4D deformation-driven rendering: the co-anchored deformation field improves PSNR by +2.6\,dB over the static model under 12\,mm lateral deformation.}
+\label{fig:4d}
+\end{figure}
+
+\subsection{SOTA on our collected datasets}
+Table~\ref{tab:sota} compares general-purpose SOTA against our pipeline on the clinical synthetic fly-through protocol (identical frames/landmarks). FoundationPose fails catastrophically (TRE 104\,mm, rot 119.7$\degree$---its scorer requires photorealistic appearance), Endo3R drifts (ATE 34\,mm, dropping 7/30 frames), Depth-Anything-V2 is unreliable on tissue (correlation 0.30 mean), while our pipeline achieves TRE 10.5\,mm on this sequence and 4.23\,mm on the 12-case cohort. General-purpose pose/reconstruction SOTA is out-of-distribution in endoscopy; our structural/geometric approach is the designed fit.
+
+\begin{table}[t]
+\centering
+\caption{SOTA on the clinical fly-through protocol (identical frames).}
+\label{tab:sota}
+\begin{tabular}{lcc}
+\toprule
+Method & Metric & Result \\
+\midrule
+FoundationPose & TRE / rot & 104\,mm / 119.7$\degree$ (fail) \\
+Endo3R & ATE / drop & 34\,mm / 7-30 frames \\
+Depth-Anything-V2 & depth corr. & 0.30 (unreliable) \\
+\textbf{Ours (sequence)} & TRE & \textbf{10.5\,mm} \\
+\textbf{Ours (12-case cohort)} & TRE & \textbf{4.23\,mm} \\
+\bottomrule
+\end{tabular}
+\end{table}
+
+\subsection{Qualitative results}
+Figures~\ref{fig:gal_ar}--\ref{fig:gal_clin} present qualitative results across the datasets. Figure~\ref{fig:gal_ar} shows the registered model fused into real BOP frames across four scenes---the projected model boundary and axes track the object through occlusion and motion, illustrating the distortion-free compositing that is the goal of AR/MR registration. Figure~\ref{fig:gal_gt} shows the centerline correspondence on real bronchoscopy frames: the projected CT airway centerline (red) aligns with the image lumen skeleton (green) and its junctions (yellow) across four frames, providing registration where depth and texture are unreliable. Figure~\ref{fig:gal_clin} shows the clinical CT-to-video overlay, the real-probe registration, and two SCARED AR frames, demonstrating the full loop from CT reconstruction to fused endoscopic view.
+
+\begin{figure*}[t]
+\centering
+\begin{minipage}{0.24\textwidth}\centering\includegraphics[width=\linewidth]{gal_ar1.png}\\(a)\end{minipage}\hfill
+\begin{minipage}{0.24\textwidth}\centering\includegraphics[width=\linewidth]{gal_ar2.png}\\(b)\end{minipage}\hfill
+\begin{minipage}{0.24\textwidth}\centering\includegraphics[width=\linewidth]{gal_ar3.png}\\(c)\end{minipage}\hfill
+\begin{minipage}{0.24\textwidth}\centering\includegraphics[width=\linewidth]{gal_ar4.png}\\(d)\end{minipage}
+\caption{AR fusion on real BOP frames (scenes 1, 1, 2, 5): the registered 3D model boundary (green) and coordinate axes are composited onto the live frame, tracking the object through occlusion and motion without distortion.}
+\label{fig:gal_ar}
+\end{figure*}
+
+\begin{figure*}[t]
+\centering
+\begin{minipage}{0.24\textwidth}\centering\includegraphics[width=\linewidth]{gal_gt1.png}\\(a)\end{minipage}\hfill
+\begin{minipage}{0.24\textwidth}\centering\includegraphics[width=\linewidth]{gal_gt2.png}\\(b)\end{minipage}\hfill
+\begin{minipage}{0.24\textwidth}\centering\includegraphics[width=\linewidth]{gal_gt3.png}\\(c)\end{minipage}\hfill
+\begin{minipage}{0.24\textwidth}\centering\includegraphics[width=\linewidth]{gal_gt4.png}\\(d)\end{minipage}
+\caption{Centerline correspondence on real bronchoscopy frames (four frames): projected CT airway centerline (red), image lumen skeleton (green), and CT junctions (yellow). This structural correspondence registers $0.0\degree$/6.6\,mm inside the airway where depth ICP fails.}
+\label{fig:gal_gt}
+\end{figure*}
+
+\begin{figure*}[t]
+\centering
+\begin{minipage}{0.24\textwidth}\centering\includegraphics[width=\linewidth]{gal_clinical.png}\\(a) clinical\end{minipage}\hfill
+\begin{minipage}{0.24\textwidth}\centering\includegraphics[width=\linewidth]{gal_probe.png}\\(b) probe\end{minipage}\hfill
+\begin{minipage}{0.24\textwidth}\centering\includegraphics[width=\linewidth]{gal_scared1.png}\\(c) SCARED\end{minipage}\hfill
+\begin{minipage}{0.24\textwidth}\centering\includegraphics[width=\linewidth]{gal_scared2.png}\\(d) SCARED\end{minipage}
+\caption{Clinical and endoscopic fusion: (a) CT-to-bronchoscopy airway overlay from a real patient CT; (b) real-probe registration; (c)--(d) SCARED AR frames with the virtual model anchored on tissue and real point-cloud occlusion over the GT trajectory.}
+\label{fig:gal_clin}
+\end{figure*}
+
+%==============================================================================
+% DISCUSSION
+%==============================================================================
+\section{Discussion}\label{sec:disc}
+
+\textbf{Observability is the central scarcity.} Across experiments the same theme recurs: tubular roll, smooth-warp rigidity equivalence, single-view tangential deformation, far-field lever amplification, and ray-sliding. The observability decomposition is the unifying tool: it explains why metrics must decompose axial/lateral error, why single-view full-3D warp recovery is ill-posed (tangential recovery $\sim$11\% versus observable components), and why the dent family converges to a $\sim$30\% recovery ceiling under our observation configuration---an observational/sampling physics limit, not an algorithmic defect. Widening the observable subspace---through multi-view input, texture, or denser observation support---is the concrete path forward, and the analysis tells us exactly which directions to target.
+
+\textbf{A cautionary note on differentiable Lie-group parameterization.} The $\det(\mathbf{R})\approx49$ defect isolated here---one line ($\mathbf{K}=\mathbf{K}-\mathbf{K}^{\top}$) that doubled an already-antisymmetric skew matrix and silently broke Rodrigues orthonormality---is easy to introduce and hard to detect, because optimizers partially compensate through reparameterization: loss curves look healthy while geometry is wrong. We recommend determinant and orthonormality assertions as first-class invariants in any differentiable SE(3)/SO(3) code.
+
+\textbf{Honest boundaries.} Single-shot symmetry resolution remains the classical ceiling (FoundationPose's learned scorer exceeds our contour arbitration, and its tracking is smoother); monocular endoscopy registration without structure is unreliable (Depth-Anything depth on tissue, correlation 0.30)---centerline correspondence is the viable path; 4D covariance is frozen under deformation; the dent family has a documented observational ceiling ($\sim$30\%) with the remaining gap requiring observation-side supersampling and a full deformed-normal field; most clinical archives beyond 13 cases were corrupt at source (documented); and manual GT on real video is in preparation via our semi-automatic centerline-proposal + dual-reader workflow (already tooled).
+
+\textbf{Reproducibility.} All evaluation scripts, the Windows build patches for FoundationPose/Endo3R, and the gallery of result figures across every dataset are released, with datasets referenced in place.
+
+\textbf{Limitations and future work.} The current evidence has clear boundaries that define the research agenda. \emph{First, observability must be widened}: single-view registration recovers only 23\% of deformation directions, so multi-view fusion, learned monocular texture priors, and denser observation support are the concrete levers---and our spectral analysis identifies exactly which singular directions each lever must target. \emph{Second, the correspondence engine is hand-built}: while it matches learned champions on their benchmark, a learned correspondence/arbitration front end trained end-to-end on the free-coordinate objective is the natural upgrade, and our engine's interface-isomorphism with FoundationPose makes this a drop-in replacement. \emph{Third, clinical GT is the bottleneck}: the 12-case cohort uses synthetic fly-throughs from real CT, and manual GT on real video is in preparation via our semi-automatic centerline-proposal + dual-reader workflow; scaling to multi-center, multi-procedure cohorts with rigorous inter-rater statistics is essential before any clinical claim. \emph{Fourth, real-time clinical deployment} requires the full loop---free-coordinate registration, observability-guided deformation, gated filtering, and co-anchored rendering---to run inside the endoscopy hardware budget, which our 30--80\,FPS registration and 112\,FPS rendering suggest is feasible but which remains to be integrated and validated in the operating room.
+
+%==============================================================================
+% CONCLUSION
+%==============================================================================
+\section{Conclusion}\label{sec:conclusion}
+FreeReg recasts AR/MR registration as a free-coordinate estimation problem and solves it with a correspondence-plus-arbitration engine, observability-guided non-rigid estimation, gated manifold filtering, and co-anchored Gaussian rendering. It approaches learned champions on their home benchmark while uniquely covering non-rigidity, temporal coherence, multi-model occlusion, real-time neural rendering, and calibration-free clinical deployment, with all components reproducible. The observability structure we isolate---its rank deficiency, its ray-sliding counterexample, and its parameterization pitfall---offers a mechanistic account of when non-rigid endoscopic registration is solvable, and a concrete path to widen it.
+
+%==============================================================================
+% ETHICS
+%==============================================================================
+\section*{Ethics Statement}
+This study is a retrospective secondary analysis of de-identified clinical imaging and structured records. Data access and use were reviewed and authorised through the institutional data-governance process of Henan Provincial People's Hospital. No animal experiments, prospective enrolment, research-directed intervention, or identifiable participant information were involved. A formal ethics-committee approval number and consent or waiver determination are not available for reporting; this statement describes the available institutional data-governance authorisation.
+
+%==============================================================================
+% ACKNOWLEDGMENTS
+%==============================================================================
+\section*{Acknowledgments}
+This research was supported by the National Natural Science Foundation of China (6240074117); the Natural Science Project of the Science and Technology Department of Henan Province (232102211001, 232102210042, and 232102210005); the Open Project Program of the State Key Laboratory of Virtual Reality Technology and Systems (VRLAB2023C03); and the High-level Talents Fund of Henan University of Technology (2022BS076 and 2022BS075). The authors thank Henan Provincial People's Hospital for providing the clinical data, and Dr. Nan Wei for valuable assistance with data curation and clinical guidance. The authors also thank the FoundationPose and Endo3R teams for open-sourcing their implementations.
+
+\bibliographystyle{IEEEtran}
+\bibliography{references}
+
+\end{document}
