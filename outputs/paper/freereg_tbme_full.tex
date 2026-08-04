@@ -297,6 +297,11 @@ For multi-model scenes we maintain a scene graph whose nodes are registered mode
 \subsection{Centerline correspondence for endoscopy}
 For monocular endoscopy, where texture and depth are unreliable, we register a 3D skeletonized CT airway centerline to the 2D skeleton of the frame's lumen-dark region by minimizing the distance-transform chamfer of the projected centerline, with junction weighting and view-frustum cropping. This structural correspondence registers $0.0\degree$/6.6\,mm inside the airway where depth ICP collapses (38.1\,mm), providing the viable path when depth is unavailable.
 
+\subsection{Learned front-end with geometric refinement (hybrid cascade)}
+The multi-source correspondence engine of Section~\ref{sec:engine} is accurate but costs 1.4\,s per single-shot. We therefore \emph{amortize} it with a learned front-end, \textbf{FreeRegNet}, that regresses the free-coordinate map directly and is refined by geometric ICP---a hybrid that keeps the geometric engine's accuracy while approaching feed-forward speed. FreeRegNet is the free-coordinate objective made learnable: a lightweight vision-transformer backbone (timm ViT-S/16, or a Qwen2-VL vision tower with VLoRA) encodes the object ROI, fused with a PointNet-style encoding of the canonical model points (object conditioning), and a pose head outputs a 6D rotation and a depth. Following the ROI-decoupling principle, the full translation is recovered analytically from the predicted depth and the observed image position (the crop center) via $\mathbf{t}=z\,K^{-1}[c_{x},c_{y},1]^{\top}$, so the network learns only appearance-dependent quantities (rotation, depth) while geometry supplies the rest.
+
+Training minimizes the free-coordinate objective~\eqref{eq:freemap} end-to-end---a geodesic rotation loss (replaced by a differentiable ADD-S point-cloud loss for symmetric objects, avoiding the symmetry ambiguity that otherwise drives large rotation errors), a translation loss, and a depth-consistency residual of the projected map---over all 13 objects and scenes with crop/illumination augmentation, cosine annealing, and a discriminative learning rate with staged backbone unfreezing. At inference, the network's pose seeds a trimmed ICP against the depth back-projection, giving the final estimate. We emphasize that this learned front-end is used \emph{only} for rigid-object pose; the clinical path remains the structural centerline method, because general learned pose front-ends fail out-of-distribution in endoscopy (Section~\ref{sec:exp}).
+
 \subsection{End-to-end pipeline}
 Algorithm~\ref{alg:freereg} summarizes the complete FreeReg pipeline, tying together the components of Sections~\ref{sec:engine}--\ref{sec:render} into a single per-frame procedure with a one-time model-preparation stage.
 
@@ -442,6 +447,24 @@ Texture SIFT only & 0.44 & 0.71 & 6.8$\degree$ \\
 Geometry FPFH only & 0.52 & 0.78 & 5.6$\degree$ \\
 Render-and-compare & 0.60 & 0.83 & 5.1$\degree$ \\
 \textbf{Fusion + arbitration} & \textbf{0.97} & \textbf{1.000} & \textbf{3.82}$\degree$ \\
+\bottomrule
+\end{tabular}
+\end{table}
+
+\subsection{Hybrid cascade: learned front-end + ICP}
+Table~\ref{tab:cascade} compares the pure learned front-end (FreeRegNet), the NN+ICP hybrid cascade, and the pure geometric engine on the same frames. The learned front-end is fast (16\,ms) but, at a lightly-trained checkpoint, inaccurate alone; seeded by it, trimmed ICP recovers most of the geometric engine's accuracy at roughly one-fifth the time (282\,ms versus 1334\,ms). This is the practical role of the learned front-end: a fast initializer that lets the geometric refiner converge quickly and reliably, with the full multi-object training further closing the accuracy gap.
+
+\begin{table}[t]
+\centering
+\caption{Hybrid cascade on BOP Linemod (learned front-end + ICP).}
+\label{tab:cascade}
+\begin{tabular}{lcc}
+\toprule
+Method & ADD-S AR@10\%d & Time \\
+\midrule
+FreeRegNet (learned only) & 0.200 & \textbf{16\,ms} \\
+\textbf{FreeRegNet + ICP (cascade)} & \textbf{0.800} & \textbf{282\,ms} \\
+Geometric engine (baseline) & 0.963 & 1334\,ms \\
 \bottomrule
 \end{tabular}
 \end{table}
