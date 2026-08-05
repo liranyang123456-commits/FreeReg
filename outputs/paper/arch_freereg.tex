@@ -81,8 +81,20 @@
   node[pos=0.25, below, font=\scriptsize\itshape, text=red!55!black]{photometric residual (online validation)}
   (rtw-south);
 
-% 输入/输出标签
+% 每列阶段标签 (与 inputs/output 一致风格)
 \node[font=\scriptsize\itshape, text=gray!60!black] at (0,-1.35) {inputs};
+\node[font=\scriptsize\itshape, text=gray!60!black] at (3.2,-1.35) {correspondence};
+\node[font=\scriptsize\itshape, text=gray!60!black] at (6.4,-1.35) {arbitrate};
+\node[font=\scriptsize\itshape, text=gray!60!black] at (9.2,-1.35) {rigid pose};
+\node[font=\scriptsize\itshape, text=gray!60!black] at (11.9,-1.35) {temporal filter};
+\node[font=\scriptsize\itshape, text=gray!60!black] at (15.0,-1.35) {deform (RTW)};
+\node[font=\scriptsize\itshape, text=gray!60!black] at (18.4,-1.35) {render};
+\node[font=\scriptsize\itshape, text=gray!60!black] at (21.7,-1.35) {occlusion};
 \node[font=\scriptsize\itshape, text=gray!60!black] at (24.7,-1.5) {output};
+
+% 可选学习前端 FreeRegNet (虚线, 并联对应引擎 → 仲裁)
+\blockc{frn}{3.2}{1.55}{2.6}{0.5}{FreeRegNet (learned, opt.)}{colData}
+\draw[conn, dashed] (inmodel-east) ++(0.3,0.55) |- (frn-west);
+\draw[conn, dashed] (frn-east) -- (arb-west);
 \end{tikzpicture}
 \end{document}

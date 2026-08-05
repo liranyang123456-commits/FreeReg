@@ -516,7 +516,7 @@ Occlusion-edge accuracy & 100\% & 100\% \\
 \centering
 \begin{minipage}{0.49\columnwidth}\centering\includegraphics[width=\linewidth]{fig8a_3dgs.png}\\{\footnotesize (a) 3DGS fidelity}\end{minipage}\hfill
 \begin{minipage}{0.49\columnwidth}\centering\includegraphics[width=\linewidth]{fig8b_4d.png}\\{\footnotesize (b) 4D deformation}\end{minipage}
-\caption{Co-anchored rendering. (a) Ground truth / hard splatting / our 3DGS on training and held-out views---the 3DGS column reproduces fine texture the hard splatter blurs (46.3\,dB PSNR). (b) Under a 12\,mm lateral deformation, the co-anchored 4D field warps the Gaussians with the tissue, recovering +2.6\,dB over the static model (which blurs under motion).}
+\caption{Co-anchored rendering. (a) Ground truth / hard splatting / our 3DGS, with a zoomed detail row beneath: the hard splatter visibly smears the fine surface texture that the 3DGS column reproduces sharply, matching GT (46.3\,dB PSNR). (b) Static / co-anchored 4D / GT under a 12\,mm lateral deformation, again with zoomed detail: the static model blurs under motion while the 4D field warps the Gaussians with the tissue, recovering fine detail (+2.6\,dB).}
 \label{fig:render}
 \end{figure}
 
