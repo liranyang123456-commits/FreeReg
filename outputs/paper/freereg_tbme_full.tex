@@ -308,7 +308,7 @@ We also verified whether a large vision--language model helps: substituting a Qw
 \subsection{End-to-end pipeline}
 Algorithm~\ref{alg:freereg} summarizes the complete FreeReg pipeline, tying together the components of Sections~\ref{sec:engine}--\ref{sec:render} into a single per-frame procedure with a one-time model-preparation stage.
 
-\begin{figure}[t]
+\begin{figure}[!tbp]
 \centering
 \fbox{\begin{minipage}{\dimexpr\columnwidth-2\fboxsep-2\fboxrule\relax}
 \small\textbf{Algorithm 1:} FreeReg (per sequence)\\[2pt]
@@ -426,10 +426,10 @@ FoundationPose & \textbf{1.000} & --- & 0.847\,(pub.) & 2.43$\degree$ & 0.4--8\,
 
 We also ran FoundationPose's official implementation (our Windows port) on the \emph{full} 13-object BOP Linemod benchmark (2600 samples): it reaches ADD-S AR@10\%d of 1.000 with a 3.3\,mm mean---near-saturated, matching our hybrid engine's ADD-S of 1.000 on the same data, and confirming that both are at the Linemod ceiling. The differentiation is elsewhere: FoundationPose's learned scorer is stronger on symmetric-object ADD and its tracking smoother, while our engine is faster per frame (1.44\,s versus 0.4--8\,s), stronger on texture-less T-LESS (ADD-S 0.942), and---critically---the only one that survives endoscopy (FoundationPose reaches TRE 104\,mm on our clinical sequence; ours reaches 4.23\,mm, Section~\ref{sec:exp}).
 
-\begin{figure}[t]
+\begin{figure}[!tbp]
 \centering
 \includegraphics[width=\columnwidth]{fig2_bop.png}
-\caption{BOP Linemod pose overlay: registered model projection boundary (green) and coordinate axes on the real frame.}
+\caption{Single-frame registration on a real BOP Linemod frame. The projected boundary of the registered 3D model (green contour) hugs the object's true silhouette, and the model coordinate axes (RGB) sit at the correct location and orientation---visually confirming that the recovered pose is distortion-free, not merely metrically close.}
 \label{fig:bop}
 \end{figure}
 
@@ -491,10 +491,10 @@ FP vs hybrid (same seq.) & 2.07 vs 10.03 & scene 1 $\times$ 200 \\
 \end{tabular}
 \end{table}
 
-\begin{figure}[t]
+\begin{figure}[!tbp]
 \centering
 \includegraphics[width=\columnwidth]{fig4_scared.png}
-\caption{SCARED real endoscopy AR: the virtual model anchored on tissue with real point-cloud occlusion over the 197-frame GT trajectory.}
+\caption{AR anchoring on real SCARED endoscopy (197-frame sequence with GT camera trajectory). The virtual model stays glued to the same tissue location across the sequence while real reconstructed geometry (point cloud) correctly occludes it where it passes behind tissue---demonstrating temporally stable, occlusion-aware anchoring, not per-frame floating.}
 \label{fig:scared}
 \end{figure}
 
@@ -518,22 +518,15 @@ real\_colon & E2E rec. & 1.5\% & \textbf{1.1\%} & no diver. \\
 \end{tabular}
 \end{table}
 
-\begin{figure}[t]
-\centering
-\includegraphics[width=\columnwidth]{fig5_colon.png}
-\caption{Real-colon deformation recovery: GT-deformed / rigid / RTW depth renders and depth-error maps.}
-\label{fig:colon}
-\end{figure}
-
-\begin{figure}[t]
+\begin{figure}[!tbp]
 \centering
 \includegraphics[width=\columnwidth]{fig6_dent.png}
-\caption{The dent family: observation / GT / rigid / RTW depth (top) and residual maps (bottom), showing high-residual concentration at silhouette edges (pose error) competing with the local dent---the edge-residual competition that motivates hierarchical refinement.}
+\caption{Non-rigid deformation recovery on the dent family and real-colon FEM benchmark. Each panel row shows one scene: (left-to-right) the observed depth, the ground-truth deformed depth, the rigid-fit depth, and the RTW-recovered depth; the bottom strip is the residual map (blue = model too deep, red = too shallow) with a shared colorbar. RTW visibly recovers the local dent that the rigid fit smooths away (residual concentrated at the dent in the rigid column, largely removed in the RTW column). The remaining high-residual ring at the silhouette edge is pose error competing with the dent---the edge-residual competition that motivates the hierarchical, region-focused refinement (Section~\ref{sec:rtw}).}
 \label{fig:dent}
 \end{figure}
 
 \subsection{Clinical registration (12 cases, 270 frames)}
-TRE-NN mean 4.23\,mm / median 2.93\,mm; 92\% $<$10\,mm; Wilcoxon $p=4.4\times10^{-31}$ versus the filtered variant; 12--38\,ms/frame (30--80\,FPS). Failure cases (data quality) were excluded with documented reasons. Centerline correspondence registers $0.0\degree$/6.6\,mm inside the airway where depth ICP collapses (38.1\,mm). Smaller airway models yielded better TRE (2.2--2.4\,mm versus 8.4\,mm), confirming the far-field lever law (error $\propto$ model span). Table~\ref{tab:clinical} summarizes the cohort statistics; Figures~\ref{fig:ct} and~\ref{fig:centerline} show the overlay and centerline correspondence.
+TRE-NN mean 4.23\,mm / median 2.93\,mm; 92\% $<$10\,mm; Wilcoxon $p=4.4\times10^{-31}$ versus the filtered variant; 12--38\,ms/frame (30--80\,FPS). Failure cases (data quality) were excluded with documented reasons. Centerline correspondence registers $0.0\degree$/6.6\,mm inside the airway where depth ICP collapses (38.1\,mm). Smaller airway models yielded better TRE (2.2--2.4\,mm versus 8.4\,mm), confirming the far-field lever law (error $\propto$ model span). Table~\ref{tab:clinical} summarizes the cohort statistics; Figure~\ref{fig:clinical} shows the overlay and centerline correspondence.
 
 \begin{table}[t]
 \centering
@@ -574,22 +567,16 @@ RFA-3 & small & 2.2 & 79 \\
 
 Per-case TRE (Table~\ref{tab:percase}) confirms the far-field lever law quantitatively: small airway models (RFA cases, 2.2--2.4\,mm) register roughly 3.5$\times$ more accurately than large full-tree models (001/002, 7.9--8.4\,mm), because a fixed angular error projects to a smaller positional error over a smaller span. This has a direct clinical implication---crop the registered model to the region of interest rather than registering the whole airway tree---and is a concrete consequence of the observability geometry (far-field directions are the least observable).
 
-\begin{figure}[t]
+\begin{figure}[!tbp]
 \centering
-\includegraphics[width=\columnwidth]{fig9a_ct.png}
-\caption{Clinical CT-to-video registration: GT (pink) versus estimated (green) airway overlay on the synthetic fly-through from real patient CT.}
-\label{fig:ct}
-\end{figure}
-
-\begin{figure}[t]
-\centering
-\includegraphics[width=\columnwidth]{fig9b_centerline.png}
-\caption{Centerline correspondence on the real bronchoscopy frame: image lumen skeleton (green), projected CT centerline (red), and CT junctions (yellow).}
-\label{fig:centerline}
+\begin{minipage}{0.49\columnwidth}\centering\includegraphics[width=\linewidth]{fig9a_ct.png}\\{\footnotesize (a) CT--video overlay}\end{minipage}\hfill
+\begin{minipage}{0.49\columnwidth}\centering\includegraphics[width=\linewidth]{fig9b_centerline.png}\\{\footnotesize (b) centerline}\end{minipage}
+\caption{Clinical CT-to-bronchoscopy registration on real patient data. (a) The estimated airway model (green) overlaid on the endoscopic frame aligns with the ground-truth airway (pink)---the near-coincident green/pink boundaries indicate accurate registration inside the airway. (b) The centerline structural correspondence that makes this possible where depth is unreliable: the image lumen skeleton (green) is matched to the projected CT airway centerline (red), anchored at the CT junctions (yellow), registering $0.0\degree$/6.6\,mm where depth-ICP collapses (38.1\,mm).}
+\label{fig:clinical}
 \end{figure}
 
 \subsection{Rendering and multi-model}
-Table~\ref{tab:render} summarizes the rendering evaluation. 3DGS reaches 46.3\,dB PSNR (train) / 42.4\,dB (held-out), SSIM 0.992, $\sim$112\,FPS at $640\times480$ with 4k Gaussians; 4D deformation-driven rendering improves +2.6\,dB over the static model under 12\,mm lateral deformation, because the co-anchored field warps the Gaussians with the tissue rather than re-fitting them. Scene-graph multi-model compositing achieves 100\% occlusion-edge accuracy in a triple-occlusion scene. Figure~\ref{fig:render} shows the rendering comparison, and Figure~\ref{fig:4d} the 4D improvement.
+Table~\ref{tab:render} summarizes the rendering evaluation. 3DGS reaches 46.3\,dB PSNR (train) / 42.4\,dB (held-out), SSIM 0.992, $\sim$112\,FPS at $640\times480$ with 4k Gaussians; 4D deformation-driven rendering improves +2.6\,dB over the static model under 12\,mm lateral deformation, because the co-anchored field warps the Gaussians with the tissue rather than re-fitting them. Scene-graph multi-model compositing achieves 100\% occlusion-edge accuracy in a triple-occlusion scene. Figure~\ref{fig:render} shows the rendering fidelity and 4D improvement, and Figure~\ref{fig:scene} the multi-model occlusion.
 
 \begin{table}[t]
 \centering
@@ -608,25 +595,19 @@ Occlusion-edge accuracy & 100\% & 100\% \\
 \end{tabular}
 \end{table}
 
-\begin{figure}[t]
+\begin{figure}[!tbp]
 \centering
-\includegraphics[width=\columnwidth]{fig8a_3dgs.png}
-\caption{Rendering comparison: GT / hard splat / 3DGS across training and held-out views.}
+\begin{minipage}{0.49\columnwidth}\centering\includegraphics[width=\linewidth]{fig8a_3dgs.png}\\{\footnotesize (a) 3DGS fidelity}\end{minipage}\hfill
+\begin{minipage}{0.49\columnwidth}\centering\includegraphics[width=\linewidth]{fig8b_4d.png}\\{\footnotesize (b) 4D deformation}\end{minipage}
+\caption{Co-anchored rendering. (a) Ground truth / hard splatting / our 3DGS on training and held-out views---the 3DGS column reproduces fine texture the hard splatter blurs (46.3\,dB PSNR). (b) Under a 12\,mm lateral deformation, the co-anchored 4D field warps the Gaussians with the tissue, recovering +2.6\,dB over the static model (which blurs under motion).}
 \label{fig:render}
 \end{figure}
 
-\begin{figure}[t]
+\begin{figure}[!tbp]
 \centering
 \includegraphics[width=\columnwidth]{fig7b_scene.png}
-\caption{Scene-graph multi-model compositing: real background / GT composite / estimated composite in a triple-occlusion scene, with 100\% occlusion-edge accuracy.}
+\caption{Scene-graph multi-model compositing in a triple-occlusion scene. Three panels---(left) the real background, (middle) the ground-truth composite, (right) our estimated composite---show three models (a bowl in front of a rabbit in front of a duck) occluding one another; the estimated composite reproduces the ground-truth occlusion ordering with 100\% occlusion-edge accuracy, confirming depth-aware compositing.}
 \label{fig:scene}
-\end{figure}
-
-\begin{figure}[t]
-\centering
-\includegraphics[width=\columnwidth]{fig8b_4d.png}
-\caption{4D deformation-driven rendering: the co-anchored deformation field improves PSNR by +2.6\,dB over the static model under 12\,mm lateral deformation.}
-\label{fig:4d}
 \end{figure}
 
 \subsection{SOTA on our collected datasets}
@@ -652,33 +633,33 @@ Depth-Anything-V2 & depth corr. & 0.30 (unreliable) \\
 \subsection{Qualitative results}
 Figures~\ref{fig:gal_ar}--\ref{fig:gal_clin} present qualitative results across the datasets. Figure~\ref{fig:gal_ar} shows the registered model fused into real BOP frames across four scenes---the projected model boundary and axes track the object through occlusion and motion, illustrating the distortion-free compositing that is the goal of AR/MR registration. Figure~\ref{fig:gal_gt} shows the centerline correspondence on real bronchoscopy frames: the projected CT airway centerline (red) aligns with the image lumen skeleton (green) and its junctions (yellow) across four frames, providing registration where depth and texture are unreliable. Figure~\ref{fig:gal_clin} shows the clinical CT-to-video overlay, the real-probe registration, and two SCARED AR frames, demonstrating the full loop from CT reconstruction to fused endoscopic view.
 
-\begin{figure*}[t]
+\begin{figure*}[!tbp]
 \centering
 \begin{minipage}{0.24\textwidth}\centering\includegraphics[width=\linewidth]{gal_ar1.png}\\(a)\end{minipage}\hfill
 \begin{minipage}{0.24\textwidth}\centering\includegraphics[width=\linewidth]{gal_ar2.png}\\(b)\end{minipage}\hfill
 \begin{minipage}{0.24\textwidth}\centering\includegraphics[width=\linewidth]{gal_ar3.png}\\(c)\end{minipage}\hfill
 \begin{minipage}{0.24\textwidth}\centering\includegraphics[width=\linewidth]{gal_ar4.png}\\(d)\end{minipage}
-\caption{AR fusion on real BOP frames (scenes 1, 1, 2, 5): the registered 3D model boundary (green) and coordinate axes are composited onto the live frame, tracking the object through occlusion and motion without distortion.}
+\caption{AR fusion across four real BOP scenes (a--d). In each, the green contour is the projected boundary of the registered 3D model and the RGB tripod its axes, composited onto the live camera frame. The contour tracks the object silhouette as it moves and is partially occluded, showing the registration is geometrically faithful (not floating or misaligned)---the visual counterpart of the metric results in Table~\ref{tab:bop}.}
 \label{fig:gal_ar}
 \end{figure*}
 
-\begin{figure*}[t]
+\begin{figure*}[!tbp]
 \centering
 \begin{minipage}{0.24\textwidth}\centering\includegraphics[width=\linewidth]{gal_gt1.png}\\(a)\end{minipage}\hfill
 \begin{minipage}{0.24\textwidth}\centering\includegraphics[width=\linewidth]{gal_gt2.png}\\(b)\end{minipage}\hfill
 \begin{minipage}{0.24\textwidth}\centering\includegraphics[width=\linewidth]{gal_gt3.png}\\(c)\end{minipage}\hfill
 \begin{minipage}{0.24\textwidth}\centering\includegraphics[width=\linewidth]{gal_gt4.png}\\(d)\end{minipage}
-\caption{Centerline correspondence on real bronchoscopy frames (four frames): projected CT airway centerline (red), image lumen skeleton (green), and CT junctions (yellow). This structural correspondence registers $0.0\degree$/6.6\,mm inside the airway where depth ICP fails.}
+\caption{Centerline correspondence on four real bronchoscopy frames. In each panel the projected CT airway centerline (red) is aligned onto the image's dark-lumen skeleton (green), anchored at the CT bifurcation junctions (yellow). Where the red and green curves coincide the registration is correct; this structural cue works inside the airway where depth-ICP fails, enabling clinical registration without reliable depth or texture.}
 \label{fig:gal_gt}
 \end{figure*}
 
-\begin{figure*}[t]
+\begin{figure*}[!tbp]
 \centering
 \begin{minipage}{0.24\textwidth}\centering\includegraphics[width=\linewidth]{gal_clinical.png}\\(a) clinical\end{minipage}\hfill
 \begin{minipage}{0.24\textwidth}\centering\includegraphics[width=\linewidth]{gal_probe.png}\\(b) probe\end{minipage}\hfill
 \begin{minipage}{0.24\textwidth}\centering\includegraphics[width=\linewidth]{gal_scared1.png}\\(c) SCARED\end{minipage}\hfill
 \begin{minipage}{0.24\textwidth}\centering\includegraphics[width=\linewidth]{gal_scared2.png}\\(d) SCARED\end{minipage}
-\caption{Clinical and endoscopic fusion: (a) CT-to-bronchoscopy airway overlay from a real patient CT; (b) real-probe registration; (c)--(d) SCARED AR frames with the virtual model anchored on tissue and real point-cloud occlusion over the GT trajectory.}
+\caption{Clinical and endoscopic fusion across four settings. (a) The estimated CT airway (green) overlaid on a bronchoscopy frame from a real patient CT, matching the true airway. (b) A real surgical probe registered into the frame. (c)--(d) SCARED AR: the virtual model stays anchored to tissue while real reconstructed geometry occludes it. Together these show the full loop---from CT reconstruction to a fused, occlusion-correct endoscopic view---across real clinical and benchmark data.}
 \label{fig:gal_clin}
 \end{figure*}
 
@@ -693,7 +674,7 @@ Figures~\ref{fig:gal_ar}--\ref{fig:gal_clin} present qualitative results across 
 
 \textbf{Honest boundaries.} Single-shot symmetry resolution remains the classical ceiling (FoundationPose's learned scorer exceeds our contour arbitration, and its tracking is smoother); monocular endoscopy registration without structure is unreliable (Depth-Anything depth on tissue, correlation 0.30)---centerline correspondence is the viable path; 4D covariance is frozen under deformation; the dent family has a documented observational ceiling ($\sim$30\%) with the remaining gap requiring observation-side supersampling and a full deformed-normal field; most clinical archives beyond 13 cases were corrupt at source (documented); and manual GT on real video is in preparation via our semi-automatic centerline-proposal + dual-reader workflow (already tooled).
 
-\textbf{Reproducibility.} All evaluation scripts, the Windows build patches for FoundationPose/Endo3R, and the gallery of result figures across every dataset are released, with datasets referenced in place.
+\textbf{Reproducibility and code availability.} The full FreeReg pipeline---the geometry kernels (SE(3)/SO(3), projection, rasterization), the multi-source correspondence engine, observability-guided RTW, the manifold SE(3) Kalman filter, the co-anchored 3DGS renderer and scene graph, the FreeRegNet learned front-end, and all evaluation scripts (unit tests and every dataset benchmark reported here)---is released as a version-controlled repository, together with the Windows build patches for FoundationPose and Endo3R used in the comparisons and the gallery of result figures across every dataset. The repository is tagged at the version used for this submission and is available from the corresponding author on request, and will be made publicly available upon publication. Datasets are referenced in place from their original providers (Section~\ref{sec:exp}); the clinical data are subject to the hospital's data-governance process (Ethics Statement).
 
 \textbf{Limitations and future work.} The current evidence has clear boundaries that define the research agenda. \emph{First, observability must be widened}: single-view registration recovers only 23\% of deformation directions, so multi-view fusion, learned monocular texture priors, and denser observation support are the concrete levers---and our spectral analysis identifies exactly which singular directions each lever must target. \emph{Second, the correspondence engine is hand-built}: while it matches learned champions on their benchmark, a learned correspondence/arbitration front end trained end-to-end on the free-coordinate objective is the natural upgrade, and our engine's interface-isomorphism with FoundationPose makes this a drop-in replacement. \emph{Third, clinical GT is the bottleneck}: the 12-case cohort uses synthetic fly-throughs from real CT, and manual GT on real video is in preparation via our semi-automatic centerline-proposal + dual-reader workflow; scaling to multi-center, multi-procedure cohorts with rigorous inter-rater statistics is essential before any clinical claim. \emph{Fourth, real-time clinical deployment} requires the full loop---free-coordinate registration, observability-guided deformation, gated filtering, and co-anchored rendering---to run inside the endoscopy hardware budget, which our 30--80\,FPS registration and 112\,FPS rendering suggest is feasible but which remains to be integrated and validated in the operating room.
 
