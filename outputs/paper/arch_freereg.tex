@@ -1,95 +1,91 @@
 \documentclass[border=10pt,tikz]{standalone}
 \usepackage{tikz}
-\usetikzlibrary{positioning,arrows.meta,calc,shadings,fit}
+\usetikzlibrary{positioning,arrows.meta,calc}
 
-% 3D block style: draws a cuboid with shaded front/top/side faces
-\newcommand{\block}[7]{%
-  % #1 name, #2 x, #3 y, #4 w, #5 h, #6 fill, #7 label
+% 3D block, 以 (cx, cy) 为几何中心, 宽 w 高 h, 标签, 主色
+\newcommand{\blockc}[7]{%
+  % #1 name, #2 cx, #3 cy, #4 w, #5 h, #6 label, #7 front color
   \begin{scope}[shift={(#2,#3)}]
-    \def\d{0.45}% depth offset
-    \fill[#6, opacity=0.55] (0,#5) -- (\d,#5+\d) -- (#4+\d,#5+\d) -- (#4,#5) -- cycle; % top
-    \fill[#6, opacity=0.75] (#4,0) -- (#4+\d,\d) -- (#4+\d,#5+\d) -- (#4,#5) -- cycle; % side
-    \fill[#6] (0,0) rectangle (#4,#5); % front
-    \draw[#6!70!black, line width=0.4pt] (0,0) rectangle (#4,#5);
-    \draw[#6!70!black, line width=0.3pt, opacity=0.7]
-      (0,#5)--(\d,#5+\d)--(#4+\d,#5+\d)--(#4,#5)
-      (#4,0)--(#4+\d,\d)--(#4+\d,#5+\d);
-    \node[align=center, font=\footnotesize, text=black] at (#4/2,#5/2) {#7};
-    \coordinate (#1-west) at (0,#5/2);
-    \coordinate (#1-east) at (#4+\d,#5/2);
-    \coordinate (#1-north) at (#4/2,#5+\d);
-    \coordinate (#1-south) at (#4/2,0);
-    \coordinate (#1-ctr) at (#4/2,#5/2);
+    \def\dx{0.28}\def\dy{0.28}
+    \pgfmathsetmacro{\w}{#4}\pgfmathsetmacro{\h}{#5}
+    \fill[blkSide] (\w/2,-\h/2) -- (\w/2+\dx,-\h/2+\dy) -- (\w/2+\dx,\h/2+\dy) -- (\w/2,\h/2) -- cycle;
+    \fill[blkTop] (-\w/2,\h/2) -- (-\w/2+\dx,\h/2+\dy) -- (\w/2+\dx,\h/2+\dy) -- (\w/2,\h/2) -- cycle;
+    \fill[#7] (-\w/2,-\h/2) rectangle (\w/2,\h/2);
+    \draw[blkEdge, line width=0.4pt] (-\w/2,-\h/2) rectangle (\w/2,\h/2);
+    \node[align=center, font=\footnotesize] at (0,0) {#6};
+    \coordinate (#1-west) at (-\w/2,0);
+    \coordinate (#1-east) at (\w/2+\dx,0);
+    \coordinate (#1-south) at (0,-\h/2);
+    \coordinate (#1-north) at (0,\h/2);
   \end{scope}%
 }
 
 \begin{document}
-\begin{tikzpicture}[conn/.style={-{Stealth[length=2.2mm]}, line width=1.1pt, draw=blue!50!black!60},
-  fb/.style={-{Stealth[length=2mm]}, line width=0.9pt, dashed, draw=red!70!black},
-  grp/.style={draw=gray, dashed, rounded corners=3pt, inner sep=4pt},
-  glab/.style={font=\scriptsize\itshape, text=gray!70!black}]
+\begin{tikzpicture}[conn/.style={-{Stealth[length=2mm]}, line width=1pt, draw=gray!60!black},
+  fb/.style={-{Stealth[length=1.8mm]}, line width=0.8pt, dashed, draw=red!60!black}]
+% 简化配色: 数据(绿) / 处理(蓝) / 输出(橙)
+\colorlet{colData}{green!55!black!20}
+\colorlet{colProc}{blue!55!black!16}
+\colorlet{colOut}{orange!60!black!25}
+\colorlet{blkSide}{black!16}
+\colorlet{blkTop}{black!9}
+\colorlet{blkEdge}{black!45}
 
-\definecolor{incol}{RGB}{120,180,120}
-\definecolor{corrcol}{RGB}{250,220,120}
-\definecolor{posecol}{RGB}{140,170,235}
-\definecolor{kalcol}{RGB}{225,150,220}
-\definecolor{rtwcol}{RGB}{150,220,230}
-\definecolor{rencol}{RGB}{180,200,240}
-\definecolor{outcol}{RGB}{250,200,130}
+% ---- 第1列: 输入 (2个压缩子块, 与单列同垂直带, 居中 y=0) ----
+\blockc{inmodel}{0}{0.4}{2.0}{0.62}{3D model\\CT / CAD}{colData}
+\blockc{inimg}{0}{-0.4}{2.0}{0.62}{Image / video\\RGB-D / mono}{colData}
 
-% ===== INPUTS =====
-\block{inmodel}{0}{2.2}{2.3}{1.7}{incol}{3D model\\CT / CAD\\mesh}
-\block{inimg}{0}{-0.6}{2.3}{1.7}{incol}{Image / video\\RGB-D or\\monocular}
+% ---- 第2列: 对应引擎 (3个压缩子块, 与单列同垂直带, 居中 y=0) ----
+\blockc{csift}{3.2}{0.52}{2.6}{0.44}{Texture\\SIFT}{colProc}
+\blockc{cfpfh}{3.2}{0.0}{2.6}{0.44}{Geometric\\FPFH}{colProc}
+\blockc{crnc}{3.2}{-0.52}{2.6}{0.44}{Render\&Compare}{colProc}
 
-% ===== CORRESPONDENCE ENGINE (3 branches) =====
-\block{csift}{4.2}{4.0}{3.1}{1.25}{corrcol}{Texture SIFT\\ROI + EPnP}
-\block{cfpfh}{4.2}{2.2}{3.1}{1.25}{corrcol}{Geometric\\FPFH + RANSAC}
-\block{crnc}{4.2}{0.4}{3.1}{1.25}{corrcol}{Render\&Compare\\templates + ICP}
-\node[grp, fit=(csift-ctr)(cfpfh-ctr)(crnc-ctr), label={[glab]above:multi-source correspondence engine}] (eng) {};
+% ---- 第3列: 仲裁 ----
+\blockc{arb}{6.4}{0}{2.2}{1.5}{Contour-gated\\arbitration}{colProc}
 
-% ===== ARBITRATION =====
-\block{arb}{8.6}{2.0}{2.3}{2.0}{corrcol!80!orange}{Contour-gated\\arbitration\\(silhouette + depth)}
+% ---- 第4列: 刚体位姿 ----
+\blockc{pose}{9.2}{0}{2.0}{1.5}{Rigid pose\\$(\mathbf{R},\mathbf{t})$}{colProc}
 
-% ===== RIGID POSE =====
-\block{pose}{12.0}{2.1}{2.2}{1.8}{posecol}{Rigid pose\\$(\mathbf{R},\mathbf{t})\in SE(3)$}
+% ---- 第5列: Kalman ----
+\blockc{kal}{11.9}{0}{2.4}{1.5}{Manifold SE(3)\\Kalman + gate}{colProc}
 
-% ===== KALMAN =====
-\block{kal}{15.4}{2.1}{2.6}{1.8}{kalcol}{Manifold SE(3)\\Kalman +\\innovation gate}
+% ---- 第6列: RTW ----
+\blockc{rtw}{15.0}{0}{2.7}{1.7}{Observability-\\guided RTW}{colProc}
 
-% ===== RTW =====
-\block{rtw}{19.2}{1.9}{3.0}{2.2}{rtwcol}{Observability-guided\\RTW: FFD + spectral\\subspace $\mathbf{V}_r$}
+% ---- 第7列: 3DGS ----
+\blockc{render}{18.4}{0}{2.7}{1.7}{Co-anchored\\3DGS render}{colProc}
 
-% ===== RENDERER =====
-\block{render}{23.6}{1.9}{3.0}{2.2}{rencol}{Co-anchored 3D\\Gaussian Splatting\\(shared warp $W$)}
+% ---- 第8列: 场景图 ----
+\blockc{scene}{21.7}{0}{2.4}{1.5}{Scene graph\\occlusion}{colProc}
 
-% ===== SCENE GRAPH =====
-\block{scene}{27.8}{2.1}{2.6}{1.8}{rencol!80!gray}{Scene graph\\multi-model\\occlusion}
+% ---- 第9列: 输出 ----
+\blockc{out}{24.7}{0}{2.1}{1.7}{MR composite\\+ validation}{colOut}
 
-% ===== OUTPUT =====
-\block{out}{31.6}{1.9}{2.4}{2.2}{outcol}{MR composite\\+ online\\validation}
-
-% ===== CONNECTIONS =====
+% ---- 连接 ----
 \draw[conn] (inmodel-east) -- (csift-west);
 \draw[conn] (inmodel-east) -- (cfpfh-west);
-\draw[conn] (inimg-east)   -- (cfpfh-west);
-\draw[conn] (inimg-east)   -- (crnc-west);
-\draw[conn] (inimg-east)   -- (csift-west);
+\draw[conn] (inimg-east) -- (cfpfh-west);
+\draw[conn] (inimg-east) -- (crnc-west);
 \draw[conn] (csift-east) -- (arb-west);
 \draw[conn] (cfpfh-east) -- (arb-west);
-\draw[conn] (crnc-east)  -- (arb-west);
-\draw[conn] (arb-east)   -- (pose-west);
-\draw[conn] (pose-east)  -- (kal-west);
-\draw[conn] (kal-east)   -- (rtw-west);
-\draw[conn] (rtw-east)   -- (render-west);
-\draw[conn] (render-east)-- (scene-west);
+\draw[conn] (crnc-east) -- (arb-west);
+\draw[conn] (arb-east) -- (pose-west);
+\draw[conn] (pose-east) -- (kal-west);
+\draw[conn] (kal-east) -- (rtw-west);
+\draw[conn] (rtw-east) -- (render-west);
+\draw[conn] (render-east) -- (scene-west);
 \draw[conn] (scene-east) -- (out-west);
 
-% validation feedback
-\draw[fb] (out-south) .. controls +(0,-3.2) and +(0,-3.2) .. node[midway, below, font=\scriptsize\itshape, text=red!60!black]{photometric residual (label-free online validation)} (rtw-south);
+% 验证反馈 (红虚线)
+\draw[fb] (out-south) .. controls +(0,-2.2) and +(0,-2.2) ..
+  node[midway, below, font=\scriptsize\itshape, text=red!55!black]{photometric residual (online validation)} (rtw-south);
 
-% stage labels
-\node[glab] at ($(inimg-south)+(0,-0.35)$) {inputs};
-\node[glab] at ($(out-south)+(0,-0.5)$) {output};
+% 输入/输出标签
+\node[font=\scriptsize\itshape, text=gray!60!black] at (0,-1.5) {inputs};
+\node[font=\scriptsize\itshape, text=gray!60!black] at (24.7,-1.7) {output};
 
+% 为输入/输出块单独着色 (数据色)
+\begin{scope}
+\end{scope}
 \end{tikzpicture}
 \end{document}
