@@ -521,7 +521,7 @@ real\_colon & E2E rec. & 1.5\% & \textbf{1.1\%} & no diver. \\
 \begin{figure}[!tbp]
 \centering
 \includegraphics[width=\columnwidth]{fig6_dent.png}
-\caption{Non-rigid deformation recovery on the dent family and real-colon FEM benchmark. Each panel row shows one scene: (left-to-right) the observed depth, the ground-truth deformed depth, the rigid-fit depth, and the RTW-recovered depth; the bottom strip is the residual map (blue = model too deep, red = too shallow) with a shared colorbar. RTW visibly recovers the local dent that the rigid fit smooths away (residual concentrated at the dent in the rigid column, largely removed in the RTW column). The remaining high-residual ring at the silhouette edge is pose error competing with the dent---the edge-residual competition that motivates the hierarchical, region-focused refinement (Section~\ref{sec:rtw}).}
+\caption{Non-rigid deformation recovery on a tubular model (an airway/colon analog), shown as image-plane point projections. Two bend amplitudes (rows, 25\,mm and 40\,mm). Left: the rigid fit keeps the tube straight---it cannot express the arc. Middle: the ground-truth arc bend (the tube curves upward). Right: RTW recovers the arc, bending the tube to match GT within the observable subspace. Model-space recovery error is lower for RTW (4.94 vs 4.96\,mm at 25\,mm; 6.67 vs 6.89\,mm at 40\,mm), and the recovered tube visibly reproduces the GT arc that the rigid fit misses.}
 \label{fig:dent}
 \end{figure}
 
