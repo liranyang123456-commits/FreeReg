@@ -320,7 +320,7 @@ Clinical path (end-to-end) & 12--38\,ms (30--80\,FPS) \\
 \end{table}
 
 \subsection{Single-frame registration (BOP)}
-Table~\ref{tab:bop} reports single-frame registration on BOP Linemod. The hybrid engine (SIFT+FPFH+multi-start+contour) matches the geometric dual engine on ADD-S (1.000) and improves ADD AR@20\%d from 0.688 to 0.784, reaching a BOP-protocol AR of 0.848 (comparable to FoundationPose's published 0.847) at 1.44\,s/frame. Figure~\ref{fig:bop} shows a pose overlay.
+Table~\ref{tab:bop} reports single-frame registration on BOP Linemod. The hybrid engine (SIFT+FPFH+multi-start+contour) matches the geometric dual engine on ADD-S (1.000) and improves ADD AR@20\%d from 0.688 to 0.784, reaching a BOP-protocol AR of 0.848 (comparable to FoundationPose's published 0.847) at 1.44\,s/frame; Figure~\ref{fig:gal_ar} shows registration overlays across scenes and objects.
 
 \begin{table}[t]
 \centering
@@ -340,13 +340,6 @@ FoundationPose & \textbf{1.000} & --- & 0.847\,(pub.) & 2.43$\degree$ & 0.4--8\,
 \end{table}
 
 We also ran FoundationPose's official implementation (our Windows port) on the \emph{full} 13-object BOP Linemod benchmark (2600 samples): it reaches ADD-S AR@10\%d of 1.000 with a 3.3\,mm mean (near-saturated, matching our hybrid engine's ADD-S of 1.000 on the same data, and confirming that both are at the Linemod ceiling. The differentiation is elsewhere: FoundationPose's learned scorer is stronger on symmetric-object ADD and its tracking smoother, while our engine is faster per frame (1.44\,s versus 0.4--8\,s), stronger on texture-less T-LESS (ADD-S 0.942), and) critically, the only one that survives endoscopy (FoundationPose reaches TRE 104\,mm on our clinical sequence; ours reaches 4.23\,mm, Section~\ref{sec:exp}).
-
-\begin{figure}[!tbp]
-\centering
-\includegraphics[width=\columnwidth]{fig2_bop_grid.png}
-\caption{Single-frame registration across BOP Linemod scenes and objects ($3\times3$). In each cell the projected silhouette of the registered 3D model (green contour) hugs the object's true outline and the model coordinate axes sit at the correct pose, across different objects, viewpoints, and occlusions, visually confirming that the recovered poses are geometrically faithful, not merely metrically close (the counterpart of Table~\ref{tab:bop}).}
-\label{fig:bop}
-\end{figure}
 
 \textbf{BOP T-LESS (texture-less symmetric).} On 308 samples the hybrid engine reaches \textbf{ADD-S AR@10\%d of 0.942} (0.984 @ 15\%d, 0.987 @ 20\%d) at 1.9\,s/frame. ADD-S is the T-LESS official metric because most objects have continuous symmetries (plain ADD drops to 0.10 under symmetric flips, as predicted by the symmetry-indistinguishability proposition). This complements Linemod: the correspondence-plus-arbitration engine stays strong on texture-less symmetric geometry where appearance-based methods degrade.
 
