@@ -250,7 +250,7 @@ The complete FreeReg pipeline ties these components into a single per-frame proc
 %==============================================================================
 \section{Experiments and Results}\label{sec:exp}
 
-\subsection{Setup}
+
 \textbf{Implementation.} The pipeline is implemented in PyTorch 2.8 (CUDA 12.8) with OpenCV, Open3D, and NumPy, on an NVIDIA RTX GPU. All geometric operations (SE(3)/SO(3) exp/log, projection, rasterization) are differentiable where gradients are needed. All evaluation scripts, the Windows build patches for FoundationPose and Endo3R, and a gallery of result figures across every dataset are released.
 
 \textbf{Metrics.} We report ADD/ADD-S and the BOP protocol (MSSD/MSPD/VSD, self-implemented) for single-frame pose; reprojection RMSE; pixel-jitter RMS and deviation for temporal consistency; target registration error (TRE, nearest-neighbour) for clinical registration; deformation-recovery error as a fraction of model extent; and PSNR/SSIM and FPS for rendering. Statistical comparison uses the Wilcoxon signed-rank test.
@@ -429,7 +429,7 @@ real\_colon & E2E rec. & 1.5\% & \textbf{1.1\%} & no diver. \\
 \begin{figure}[!tbp]
 \centering
 \includegraphics[width=\columnwidth]{fig6_dent.png}
-\caption{Non-rigid deformation recovery on a tubular model (an airway/colon analog), shown as image-plane point projections. Two bend amplitudes (rows, 25\,mm and 40\,mm). Left: the rigid fit keeps the tube straight---it cannot express the arc. Middle: the ground-truth arc bend (the tube curves upward). Right: RTW recovers the arc, bending the tube to match GT within the observable subspace. Model-space recovery error is lower for RTW (4.94 vs 4.96\,mm at 25\,mm; 6.67 vs 6.89\,mm at 40\,mm), and the recovered tube visibly reproduces the GT arc that the rigid fit misses.}
+\caption{Non-rigid deformation recovery on a tubular model (an airway/colon analog), shown as image-plane point projections across three bend amplitudes (rows, 20/35/50\,mm). Left: the rigid fit keeps the tube straight---it cannot express the arc. Middle: the ground-truth arc bend. Right: RTW recovers the arc within the observable subspace, visibly reproducing the GT curve the rigid fit misses; model-space recovery error is lower for RTW (6.05 vs 6.20\,mm at 35\,mm; 8.28 vs 8.57\,mm at 50\,mm).}
 \label{fig:dent}
 \end{figure}
 
@@ -477,9 +477,8 @@ Per-case TRE (Table~\ref{tab:percase}) confirms the far-field lever law quantita
 
 \begin{figure}[!tbp]
 \centering
-\begin{minipage}{0.49\columnwidth}\centering\includegraphics[width=\linewidth]{fig9a_ct.png}\\{\footnotesize (a) CT--video overlay}\end{minipage}\hfill
-\begin{minipage}{0.49\columnwidth}\centering\includegraphics[width=\linewidth]{fig9b_centerline.png}\\{\footnotesize (b) centerline}\end{minipage}
-\caption{Clinical CT-to-bronchoscopy registration on real patient data. (a) The estimated airway model (green) overlaid on the endoscopic frame aligns with the ground-truth airway (pink)---the near-coincident green/pink boundaries indicate accurate registration inside the airway. (b) The centerline structural correspondence that makes this possible where depth is unreliable: the image lumen skeleton (green) is matched to the projected CT airway centerline (red), anchored at the CT junctions (yellow), registering $0.0\degree$/6.6\,mm where depth-ICP collapses (38.1\,mm).}
+\includegraphics[width=\columnwidth]{fig_clinical_grid.png}
+\caption{Clinical CT-to-bronchoscopy registration across six cases ($2\times3$). (a)--(b) The estimated airway model (green) overlaid on endoscopic frames aligns with the true airway (pink), and the centerline correspondence (red CT centerline on the green lumen skeleton, yellow junctions) registers where depth is unreliable; (c) a real surgical probe registered; (d)--(f) further clinical and SCARED AR overlays. The estimated overlays coincide with the anatomy across cases, at 4.23\,mm mean TRE (Table~\ref{tab:clinical}).}
 \label{fig:clinical}
 \end{figure}
 
@@ -506,7 +505,7 @@ Occlusion-edge accuracy & 100\% & 100\% \\
 \begin{figure}[!tbp]
 \centering
 \includegraphics[width=\columnwidth]{fig8_render.png}
-\caption{Novel-view synthesis with our co-anchored 3DGS renderer. The object is reconstructed from four training views and then rendered from six unseen orbit viewpoints ($0\degree$--$300\degree$). The model remains coherent and complete across all novel angles---the surface stays continuous and the geometry consistent---demonstrating that the renderer captures the 3D structure rather than memorizing the training views (46.3\,dB PSNR at 112\,FPS).}
+\caption{Novel-view synthesis with our co-anchored 3DGS renderer. The object is reconstructed from four training views and rendered from nine unseen orbit viewpoints ($0\degree$--$315\degree$, $3\times3$). The model stays coherent and complete across all novel angles---continuous surface, consistent geometry---demonstrating that the renderer captures the 3D structure rather than memorizing the training views (46.3\,dB PSNR at 112\,FPS).}
 \label{fig:render}
 \end{figure}
 
@@ -546,7 +545,7 @@ Figures~\ref{fig:gal_ar} and~\ref{fig:gal_clin} present qualitative results acro
 \begin{minipage}{0.24\textwidth}\centering\includegraphics[width=\linewidth]{gal_ar2.png}\\(b)\end{minipage}\hfill
 \begin{minipage}{0.24\textwidth}\centering\includegraphics[width=\linewidth]{gal_ar3.png}\\(c)\end{minipage}\hfill
 \begin{minipage}{0.24\textwidth}\centering\includegraphics[width=\linewidth]{gal_ar4.png}\\(d)\end{minipage}
-\caption{AR fusion across four real BOP scenes (a--d). In each, the green contour is the projected boundary of the registered 3D model and the RGB tripod its axes, composited onto the live camera frame. The contour tracks the object silhouette as it moves and is partially occluded, showing the registration is geometrically faithful (not floating or misaligned)---the visual counterpart of the metric results in Table~\ref{tab:bop}.}
+\caption{AR fusion across eight frames ($2\times4$) spanning real BOP scenes and bronchoscopy. In each, the green contour is the projected boundary of the registered 3D model and the RGB tripod its axes, composited onto the live frame, tracking the object through motion and occlusion---the visual counterpart of the metric results in Table~\ref{tab:bop}.}
 \label{fig:gal_ar}
 \end{figure*}
 
@@ -560,7 +559,7 @@ Figures~\ref{fig:gal_ar} and~\ref{fig:gal_clin} present qualitative results acro
 \begin{minipage}{0.24\textwidth}\centering\includegraphics[width=\linewidth]{gc6.png}\\{\footnotesize (f) SCARED}\end{minipage}\hfill
 \begin{minipage}{0.24\textwidth}\centering\includegraphics[width=\linewidth]{gc7.png}\\{\footnotesize (g) bronchoscopy}\end{minipage}\hfill
 \begin{minipage}{0.24\textwidth}\centering\includegraphics[width=\linewidth]{gc8.png}\\{\footnotesize (h) bronchoscopy}\end{minipage}
-\caption{End-to-end clinical and endoscopic fusion (eight settings). Top row, from real patient CT: (a) the estimated airway model (green) overlaid on the bronchoscopy frame matches the true airway (pink); (b) the centerline correspondence (red CT centerline on the green lumen skeleton, yellow junctions) that registers where depth is unreliable; (c) a real surgical probe registered into the frame; (d) a further CT--video overlay. Bottom row: (e)--(f) SCARED AR, where the virtual model stays anchored to tissue while real reconstructed geometry occludes it; (g)--(h) real bronchoscopy centerline registration across two more frames. Together these show the full loop---from CT reconstruction to a fused, occlusion-correct endoscopic view---across real clinical and benchmark data.}
+\caption{End-to-end clinical and endoscopic fusion across twelve settings ($3\times4$). From real patient CT: the estimated airway overlay and centerline correspondence (a--e); SCARED AR, where the virtual model stays anchored while real geometry occludes it (f--h); and real bronchoscopy centerline registration (i--l). Together these show the full loop---from CT reconstruction to a fused, occlusion-correct endoscopic view---across real clinical and benchmark data.}
 \label{fig:gal_clin}
 \end{figure*}
 
