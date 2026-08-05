@@ -1,4 +1,4 @@
-This is pdfTeX, Version 3.141592653-2.6-1.40.27 (MiKTeX 25.4) (preloaded format=pdflatex 2026.1.12)  5 AUG 2026 10:02
+This is pdfTeX, Version 3.141592653-2.6-1.40.27 (MiKTeX 25.4) (preloaded format=pdflatex 2026.1.12)  5 AUG 2026 10:16
 entering extended mode
  restricted \write18 enabled.
  %&-line parsing enabled.
@@ -53,8 +53,7 @@ Package: iftex 2024/12/12 v1.0g TeX engine tests
 (D:\Ctex\MiKTeX\tex/latex/l3backend\l3backend-pdftex.def
 File: l3backend-pdftex.def 2025-10-09 L3 backend support: PDF output (pdfTeX)
 \l__color_backend_stack_int=\count286
-)
-No file ethics_statement.aux.
+) (ethics_statement.aux)
 \openout1 = `ethics_statement.aux'.
 
 LaTeX Font Info:    Checking defaults for OML/cmm/m/it on input line 5.
@@ -71,6 +70,7 @@ LaTeX Font Info:    Checking defaults for OMX/cmex/m/n on input line 5.
 LaTeX Font Info:    ... okay on input line 5.
 LaTeX Font Info:    Checking defaults for U/cmr/m/n on input line 5.
 LaTeX Font Info:    ... okay on input line 5.
+
 *geometry* driver: auto-detecting
 *geometry* detected driver: pdftex
 *geometry* verbose mode - [ preamble ] result:
@@ -115,16 +115,16 @@ L3 programming layer <2025-11-06>
  ***********
  ) 
 Here is how much of TeX's memory you used:
- 1035 strings out of 467833
- 17258 string characters out of 5431648
+ 1038 strings out of 467833
+ 17391 string characters out of 5431648
  436736 words of memory out of 5000000
- 29994 multiletter control sequences out of 15000+600000
+ 29995 multiletter control sequences out of 15000+600000
  628329 words of font info for 42 fonts, out of 8000000 for 9000
  1141 hyphenation exceptions out of 8191
  57i,5n,65p,168b,126s stack positions out of 10000i,1000n,20000p,200000b,200000s
 <D:/Ctex/MiKTeX/fonts/type1/public/amsfonts/cm/cmbx10.pfb><D:/Ctex/MiKTeX/fon
 ts/type1/public/amsfonts/cm/cmr10.pfb>
-Output written on ethics_statement.pdf (1 page, 35037 bytes).
+Output written on ethics_statement.pdf (1 page, 35381 bytes).
 PDF statistics:
  16 PDF objects out of 1000 (max. 8388607)
  0 named destinations out of 1000 (max. 500000)
