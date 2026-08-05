@@ -514,9 +514,8 @@ Occlusion-edge accuracy & 100\% & 100\% \\
 
 \begin{figure}[!tbp]
 \centering
-\begin{minipage}{0.49\columnwidth}\centering\includegraphics[width=\linewidth]{fig8a_3dgs.png}\\{\footnotesize (a) 3DGS fidelity}\end{minipage}\hfill
-\begin{minipage}{0.49\columnwidth}\centering\includegraphics[width=\linewidth]{fig8b_4d.png}\\{\footnotesize (b) 4D deformation}\end{minipage}
-\caption{Co-anchored rendering. (a) Ground truth (dense 20k-point splat) / hard splat (500 points) / our 3DGS, with an edge-zoom row beneath: the sparse hard splatter breaks into visible holes and a jagged, aliased silhouette, whereas the 3DGS column renders a smooth, continuous surface matching GT (46.3\,dB PSNR)---the fidelity gap that motivates Gaussian rendering over naive splatting. (b) Static 3DGS / co-anchored 4D / GT under a 12\,mm lateral deformation, with the same edge zoom: the static model's edge blurs under motion while the 4D field keeps it sharp (+2.6\,dB).}
+\includegraphics[width=\columnwidth]{fig8_render.png}
+\caption{Co-anchored rendering, as a uniform $2\times3$ grid. Top row (3DGS fidelity): ground truth (dense splat) / hard splat (500 points) / our 3DGS---the sparse hard splatter breaks into visible holes and a jagged silhouette, whereas the 3DGS column renders a smooth, continuous surface matching GT (46.3\,dB PSNR); this fidelity gap is what motivates Gaussian rendering over naive splatting. Bottom row (4D deformation): static 3DGS / co-anchored 4D / GT under a 12\,mm bend---the static model blurs under motion while the 4D field keeps the surface sharp (+2.6\,dB).}
 \label{fig:render}
 \end{figure}
 
