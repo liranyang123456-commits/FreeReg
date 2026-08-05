@@ -655,11 +655,15 @@ Figures~\ref{fig:gal_ar}--\ref{fig:gal_clin} present qualitative results across 
 
 \begin{figure*}[!tbp]
 \centering
-\begin{minipage}{0.24\textwidth}\centering\includegraphics[width=\linewidth]{gal_clinical.png}\\(a) clinical\end{minipage}\hfill
-\begin{minipage}{0.24\textwidth}\centering\includegraphics[width=\linewidth]{gal_probe.png}\\(b) probe\end{minipage}\hfill
-\begin{minipage}{0.24\textwidth}\centering\includegraphics[width=\linewidth]{gal_scared1.png}\\(c) SCARED\end{minipage}\hfill
-\begin{minipage}{0.24\textwidth}\centering\includegraphics[width=\linewidth]{gal_scared2.png}\\(d) SCARED\end{minipage}
-\caption{Clinical and endoscopic fusion across four settings. (a) The estimated CT airway (green) overlaid on a bronchoscopy frame from a real patient CT, matching the true airway. (b) A real surgical probe registered into the frame. (c)--(d) SCARED AR: the virtual model stays anchored to tissue while real reconstructed geometry occludes it. Together these show the full loop---from CT reconstruction to a fused, occlusion-correct endoscopic view---across real clinical and benchmark data.}
+\begin{minipage}{0.24\textwidth}\centering\includegraphics[width=\linewidth]{gc1.png}\\{\footnotesize (a) CT overlay}\end{minipage}\hfill
+\begin{minipage}{0.24\textwidth}\centering\includegraphics[width=\linewidth]{gc2.png}\\{\footnotesize (b) centerline}\end{minipage}\hfill
+\begin{minipage}{0.24\textwidth}\centering\includegraphics[width=\linewidth]{gc3.png}\\{\footnotesize (c) probe}\end{minipage}\hfill
+\begin{minipage}{0.24\textwidth}\centering\includegraphics[width=\linewidth]{gc4.png}\\{\footnotesize (d) clinical}\end{minipage}\\[2pt]
+\begin{minipage}{0.24\textwidth}\centering\includegraphics[width=\linewidth]{gc5.png}\\{\footnotesize (e) SCARED}\end{minipage}\hfill
+\begin{minipage}{0.24\textwidth}\centering\includegraphics[width=\linewidth]{gc6.png}\\{\footnotesize (f) SCARED}\end{minipage}\hfill
+\begin{minipage}{0.24\textwidth}\centering\includegraphics[width=\linewidth]{gc7.png}\\{\footnotesize (g) bronchoscopy}\end{minipage}\hfill
+\begin{minipage}{0.24\textwidth}\centering\includegraphics[width=\linewidth]{gc8.png}\\{\footnotesize (h) bronchoscopy}\end{minipage}
+\caption{End-to-end clinical and endoscopic fusion (eight settings). Top row, from real patient CT: (a) the estimated airway model (green) overlaid on the bronchoscopy frame matches the true airway (pink); (b) the centerline correspondence (red CT centerline on the green lumen skeleton, yellow junctions) that registers where depth is unreliable; (c) a real surgical probe registered into the frame; (d) a further CT--video overlay. Bottom row: (e)--(f) SCARED AR, where the virtual model stays anchored to tissue while real reconstructed geometry occludes it; (g)--(h) real bronchoscopy centerline registration across two more frames. Together these show the full loop---from CT reconstruction to a fused, occlusion-correct endoscopic view---across real clinical and benchmark data.}
 \label{fig:gal_clin}
 \end{figure*}
 
