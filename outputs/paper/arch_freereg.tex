@@ -76,16 +76,13 @@
 \draw[conn] (render-east) -- (scene-west);
 \draw[conn] (scene-east) -- (out-west);
 
-% 验证反馈 (红虚线)
-\draw[fb] (out-south) .. controls +(0,-2.2) and +(0,-2.2) ..
-  node[midway, below, font=\scriptsize\itshape, text=red!55!black]{photometric residual (online validation)} (rtw-south);
+% 验证反馈 (红虚线, 横平竖直直角, 压低占位)
+\draw[fb] (out-south) -- ++(0,-0.55) -|
+  node[pos=0.25, below, font=\scriptsize\itshape, text=red!55!black]{photometric residual (online validation)}
+  (rtw-south);
 
 % 输入/输出标签
-\node[font=\scriptsize\itshape, text=gray!60!black] at (0,-1.5) {inputs};
-\node[font=\scriptsize\itshape, text=gray!60!black] at (24.7,-1.7) {output};
-
-% 为输入/输出块单独着色 (数据色)
-\begin{scope}
-\end{scope}
+\node[font=\scriptsize\itshape, text=gray!60!black] at (0,-1.35) {inputs};
+\node[font=\scriptsize\itshape, text=gray!60!black] at (24.7,-1.5) {output};
 \end{tikzpicture}
 \end{document}
