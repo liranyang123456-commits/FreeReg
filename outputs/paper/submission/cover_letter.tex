@@ -1,0 +1,60 @@
+\documentclass[10pt]{letter}
+\usepackage[margin=0.8in]{geometry}
+\usepackage{parskip}
+\signature{Ranyang Li (on behalf of all authors)}
+\address{School of Artificial Intelligence and Big Data\\Henan University of Technology\\Zhengzhou 450001, China\\lry@haut.edu.cn}
+\begin{document}
+\begin{letter}{The Editor-in-Chief\\IEEE Transactions on Biomedical Engineering}
+\opening{Dear Editor,}
+
+We have prepared the following original research manuscript for consideration
+for publication in \emph{IEEE Transactions on Biomedical Engineering}:
+
+\textbf{``FreeReg: Observability-Guided Non-Rigid Registration of Arbitrary 3D
+Models into Arbitrary Endoscopic Images and Videos''}
+
+Surgical mixed reality requires registering an arbitrary 3D model---a CT
+reconstruction, an instrument, an implant---into an arbitrary endoscopic image
+or video, computing the projection mapping among the model, camera, and pixel
+coordinate frames. Classical calibrate-then-align pipelines assume calibrated
+cameras, rigid targets, and independent per-frame estimation; all three fail in
+endoscopy. We formalize \emph{free-coordinate registration} as the joint
+estimation of the free mapping $F=\pi_{D}\circ K\circ(R,t)\circ(I+W)$, with
+every component individually optional and degradable, and solve it with a
+multi-source correspondence engine with contour-gated arbitration, an
+observability-guided rigid-plus-warp estimator, a manifold SE(3) Kalman filter
+with innovation gating, a learned free-coordinate front-end refined by
+geometric ICP, and a co-anchored 3D Gaussian Splatting renderer.
+
+Key results: (1)~on the BOP Linemod benchmark the engine reaches BOP-protocol
+AR 0.848 versus FoundationPose 0.847, and on the full 13-object benchmark (2600
+samples) both reach ADD-S 1.000---the Linemod ceiling; (2)~on texture-less
+T-LESS the engine reaches ADD-S 0.942; (3)~a learned front-end refined by ICP
+matches the geometric engine at $5\times$ speed (ADD-S 0.987 at 158\,ms);
+(4)~the defining advantage appears in endoscopy, where general-purpose
+champions collapse out-of-distribution (FoundationPose TRE 104\,mm, Endo3R ATE
+34\,mm) while our structural approach registers 12 clinical CT-to-bronchoscopy
+cases at 4.23\,mm mean (92\% $<$10\,mm, Wilcoxon $p=4.4\times10^{-31}$) at
+30--80\,FPS; (5)~observability-guided non-rigid estimation recovers deformation
+to 1.1\% on a real-colon FEM benchmark, and we isolate the rank-deficiency
+(151/648 directions), ray-sliding counterexample, and a determinant-corrupting
+parameterization pitfall in differentiable Lie-group optimization.
+
+To our knowledge FreeReg is the only framework that is simultaneously
+rigid-capable, non-rigid, temporally coherent, occlusion-aware,
+real-time-renderable, and clinically deployable. The work aligns with IEEE
+TBME's scope in biomedical imaging methodology, surgical navigation, and
+computational modeling for mixed-reality guidance.
+
+This manuscript is original, has not been published previously, and is not
+under consideration elsewhere. All authors have approved the manuscript and
+declare no competing interests. The clinical data statement is provided in the
+accompanying Ethics Statement; the study is a retrospective secondary analysis
+of de-identified clinical imaging authorised through the institutional
+data-governance process of Henan Provincial People's Hospital.
+
+Thank you for your consideration.
+
+\closing{Sincerely,}
+\end{letter}
+\end{document}

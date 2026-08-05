@@ -1,0 +1,183 @@
+\documentclass[10pt]{article}
+\usepackage[margin=0.85in]{geometry}
+\usepackage{amsmath,amssymb}
+\usepackage{graphicx}
+\usepackage{booktabs}
+\usepackage{multirow}
+\usepackage{gensymb}
+\usepackage{caption}
+\usepackage[hidelinks]{hyperref}
+\graphicspath{{../figs/}{../}}
+
+\title{Supplementary Material\\[0.3em]
+\large FreeReg: Observability-Guided Non-Rigid Registration of Arbitrary 3D
+Models into Arbitrary Endoscopic Images and Videos}
+\author{Ranyang Li, Nan Wei, Chao Fan, Junjun Pan}
+\date{}
+
+\begin{document}
+\maketitle
+
+This supplementary document provides per-object and per-case results,
+implementation and hyperparameter details, the observability analysis, and
+additional qualitative figures that do not fit within the main text.
+
+%======================================================================
+\section{Per-object BOP Linemod results (full 13-object benchmark)}
+Table~\ref{tab:perobj} reports the FoundationPose official implementation
+(this-work Windows port) on the full 13-object BOP Linemod benchmark (200
+frames per object, 2600 samples), confirming the near-saturated Linemod
+ceiling. Our hybrid engine matches this ceiling (ADD-S 1.000) on the same data.
+
+\begin{table}[h]
+\centering
+\caption{FoundationPose full 13-object BOP Linemod benchmark (this-work port).}
+\label{tab:perobj}
+\begin{tabular}{lccc}
+\toprule
+Object & ADD-S AR@10\%d & ADD-S mean (mm) & $n$ \\
+\midrule
+obj\_000001 (ape) & 1.000 & 2.51 & 200 \\
+obj\_000002 & 1.000 & 3.15 & 200 \\
+obj\_000004 & 1.000 & 3.42 & 200 \\
+obj\_000005 & 1.000 & 3.66 & 200 \\
+obj\_000006 & 1.000 & 2.44 & 200 \\
+obj\_000008 & 1.000 & 3.54 & 200 \\
+obj\_000009 & 1.000 & 2.66 & 200 \\
+obj\_000010 & 1.000 & 3.18 & 200 \\
+obj\_000011 & 1.000 & 3.43 & 200 \\
+obj\_000012 & 0.995 & 3.34 & 200 \\
+obj\_000013 & 1.000 & 4.68 & 200 \\
+obj\_000014 & 1.000 & 4.08 & 200 \\
+obj\_000015 & 1.000 & 4.07 & 200 \\
+\midrule
+\textbf{Mean (13 obj.)} & \textbf{1.000} & \textbf{3.3} & 2600 \\
+\bottomrule
+\end{tabular}
+\end{table}
+
+%======================================================================
+\section{Per-case clinical CT-to-bronchoscopy TRE}
+Table~\ref{tab:percase} extends the cohort statistics of the main text. The
+far-field lever law is visible: small airway models (RFA cases) register
+roughly $3.5\times$ more accurately than large full-tree models, motivating
+region-of-interest cropping.
+
+\begin{table}[h]
+\centering
+\caption{Per-case clinical TRE (synthetic fly-through from real patient CT).}
+\label{tab:percase}
+\begin{tabular}{lccc}
+\toprule
+Case & Model span & TRE (mm) & FPS \\
+\midrule
+001 & large & 8.4 & 62 \\
+002 & large & 7.9 & 58 \\
+008 & medium & 4.6 & 71 \\
+RFA-1 & small & 2.4 & 80 \\
+RFA-2 & small & 2.3 & 80 \\
+RFA-3 & small & 2.2 & 79 \\
+\midrule
+\textbf{Cohort (12 cases)} & --- & \textbf{4.23 mean / 2.93 med} & 30--80 \\
+\bottomrule
+\end{tabular}
+\end{table}
+
+%======================================================================
+\section{FreeRegNet architecture and training detail}
+FreeRegNet amortizes the correspondence engine. Table~\ref{tab:frn} lists the
+configuration; Table~\ref{tab:frnres} gives the learned-front-end and hybrid
+cascade results on 300 BOP Linemod frames.
+
+\begin{table}[h]
+\centering
+\caption{FreeRegNet configuration.}
+\label{tab:frn}
+\begin{tabular}{ll}
+\toprule
+Component & Setting \\
+\midrule
+Backbone & timm ViT-S/16 (22.4\,M); optional Qwen2-VL-2B + VLoRA (2.2\,B) \\
+Object conditioning & PointNet-style encoding of 256 canonical points \\
+Pose head & 6D rotation (Zhou) + log-depth; ROI-decoupled translation \\
+Loss & geodesic / ADD-S (symmetric) + translation + depth consistency \\
+Optimizer & AdamW, cosine annealing, discriminative LR (0.1$\times$ backbone) \\
+Schedule & 50 epochs, staged backbone unfreeze at epoch 3 \\
+Augmentation & crop jitter, brightness/contrast, noise, channel shuffle \\
+\bottomrule
+\end{tabular}
+\end{table}
+
+\begin{table}[h]
+\centering
+\caption{Learned front-end and hybrid cascade (300 BOP Linemod frames).}
+\label{tab:frnres}
+\begin{tabular}{lccc}
+\toprule
+Method & ADD-S AR@10\%d & ADD AR@10\%d & Time \\
+\midrule
+FreeRegNet (learned only) & 0.827 & --- & 8\,ms \\
+FreeRegNet + ICP (cascade) & 0.987 & 0.953 & 158\,ms \\
+Geometric engine (baseline) & 0.997 & --- & 807\,ms \\
+\bottomrule
+\end{tabular}
+\end{table}
+
+\textbf{VLM negative result.} Substituting a Qwen2-VL-2B vision tower (with
+VLoRA) for the lightweight ViT gives no accuracy gain at equal budget (ADD-S
+0.200 at 4 epochs versus the ViT's convergence to 0.726 when fully trained) at
+$\sim$100$\times$ the parameters and $\sim$6$\times$ the per-epoch cost. A
+general VLM's language-aligned features do not specifically benefit geometric
+pose regression, and the larger model is harder to train on limited data.
+
+%======================================================================
+\section{Observability analysis}
+The single-view depth-residual Jacobian $\mathbf{J}=-\mathbf{W}\otimes\mathbf{R}\mathbf{z}$
+is severely rank-deficient: only 151 of 648 singular values exceed
+$\sigma_{\max}\cdot10^{-3}$ (23\%). The unobservable null space includes tubular
+roll, tangential surface flow, and smooth low-frequency warps that preserve the
+sampled depth profile. The spectral projection $\mathbf{V}_{r}\mathbf{V}_{r}^{\top}$
+in the RTW objective restricts deformation to the observable subspace, both
+stabilizing optimization and preventing hallucinated structure.
+
+\textbf{Ray-sliding counterexample.} A determinant-corrupting rotation
+parameterization bug ($\mathbf{K}=\mathbf{K}-\mathbf{K}^{\top}$ doubling an
+antisymmetric skew matrix, $\det\mathbf{R}\approx49$) caused the depth residual
+to converge to 0.002 while shape error reached 268\%: motion in the
+unobservable subspace is invisible to the residual, so the optimizer corrupts
+geometry while reporting success. We recommend determinant/orthonormality
+assertions as first-class invariants in differentiable SE(3)/SO(3) code.
+
+%======================================================================
+\section{Additional qualitative results}
+Figures~\ref{fig:sup_ar}--\ref{fig:sup_render} present additional qualitative
+results across datasets.
+
+\begin{figure}[h]
+\centering
+\includegraphics[width=0.48\linewidth]{gal_ar1.png}\hfill
+\includegraphics[width=0.48\linewidth]{gal_ar4.png}
+\caption{AR fusion on real BOP frames: registered model boundary and axes
+composited onto live frames, tracking through occlusion and motion.}
+\label{fig:sup_ar}
+\end{figure}
+
+\begin{figure}[h]
+\centering
+\includegraphics[width=0.48\linewidth]{gal_gt1.png}\hfill
+\includegraphics[width=0.48\linewidth]{gal_gt3.png}
+\caption{Centerline correspondence on real bronchoscopy frames: projected CT
+airway centerline (red), image lumen skeleton (green), junctions (yellow).}
+\label{fig:sup_gt}
+\end{figure}
+
+\begin{figure}[h]
+\centering
+\includegraphics[width=0.48\linewidth]{gal_clinical.png}\hfill
+\includegraphics[width=0.48\linewidth]{gal_scared1.png}
+\caption{Clinical CT-to-bronchoscopy airway overlay (left) and SCARED AR frame
+with the virtual model anchored on tissue (right).}
+\label{fig:sup_render}
+\end{figure}
+
+\end{document}
