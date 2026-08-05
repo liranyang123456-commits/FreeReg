@@ -51,27 +51,23 @@ Augmented reality, registration, non-rigid registration, pose estimation, Gaussi
 %==============================================================================
 \section{Introduction}\label{sec:intro}
 
-\subsection{Motivation and significance}
-Minimally invasive surgery replaces the surgeon's direct view and palpation with a camera at the end of a narrow scope. In procedures such as bronchoscopy, colonoscopy, and laparoscopy, the clinician navigates a deformable, poorly textured, fluid-covered anatomy with no external landmarks, where losing spatial orientation carries real risk---a mislocalized biopsy, a perforated wall, a missed lesion. Surgical mixed reality (MR) promises to restore that orientation by overlaying a patient-specific 3D model---a CT/MRI airway reconstruction, a surgical instrument, an implant, a radiation target---onto the live endoscopic video, so that the virtual content appears anchored to the anatomy without distortion~\cite{gildea2006enb,bobrow2023c3vd,allan2021scared}. Realizing this promises safer navigation, shorter procedures, and quantitative guidance; yet it remains largely unrealized in routine endoscopy precisely because the underlying registration is fragile.
+\textbf{Motivation and significance.} Minimally invasive surgery replaces the surgeon's direct view and palpation with a camera at the end of a narrow scope. In procedures such as bronchoscopy, colonoscopy, and laparoscopy, the clinician navigates a deformable, poorly textured, fluid-covered anatomy with no external landmarks, where losing spatial orientation carries real risk---a mislocalized biopsy, a perforated wall, a missed lesion. Surgical mixed reality (MR) promises to restore that orientation by overlaying a patient-specific 3D model---a CT/MRI airway reconstruction, a surgical instrument, an implant, a radiation target---onto the live endoscopic video, so that the virtual content appears anchored to the anatomy without distortion~\cite{gildea2006enb,bobrow2023c3vd,allan2021scared}. Realizing this promises safer navigation, shorter procedures, and quantitative guidance; yet it remains largely unrealized in routine endoscopy precisely because the underlying registration is fragile.
 
-\subsection{The registration problem and its classical solution}
-At its core this is a projection-mapping problem among at least three coordinate frames: the \emph{model frame} $\mathcal{F}_{m}$, the \emph{camera frame} $\mathcal{F}_{c}$, and the \emph{pixel frame} $\mathcal{F}_{p}$. A point $\mathbf{X}_{m}$ in the model frame is carried to the image by the chain
+\textbf{The registration problem and its classical solution.} At its core this is a projection-mapping problem among at least three coordinate frames: the \emph{model frame} $\mathcal{F}_{m}$, the \emph{camera frame} $\mathcal{F}_{c}$, and the \emph{pixel frame} $\mathcal{F}_{p}$. A point $\mathbf{X}_{m}$ in the model frame is carried to the image by the chain
 \begin{equation}\label{eq:chain}
 \mathbf{x}_{p} = \pi_{D}\!\bigl(\, K\,\mathbf{T}_{cm}\,(\mathbf{X}_{m} + W(\mathbf{X}_{m}))\,\bigr),
 \end{equation}
 where $\mathbf{T}_{cm}=(\mathbf{R},\mathbf{t})\in SE(3)$ is the rigid model-to-camera pose, $W$ is a deformation field, $K$ collects the camera intrinsics, and $\pi_{D}$ is the (possibly distorted) perspective projection. The classical industrial and surgical-navigation decomposition---calibrate the camera, collect corresponding points between model and scene, and align them by a rigid rotation-translation (RT) transform~\cite{kabsch1976,umeyama1991,besl1992icp}---rests on three assumptions that fail in endoscopy. \emph{First, calibration is unavailable or drifts}: intrinsics $K$ are rarely provided for a deployed endoscope and change with focus and coupling. \emph{Second, anatomy is not rigid}: respiration, heartbeat, peristalsis, and instrument pressure deform tissue continuously, so a rigid fit reallocates the deformation into pose error and the model appears to ``swim.'' \emph{Third, per-frame estimation is temporally incoherent}: independent per-frame poses jitter, producing floating and flicker that break the MR illusion and can mislead the operator.
 
-\subsection{Progress and the out-of-distribution gap}
-Object pose estimation has advanced rapidly: on the BOP benchmark, methods progressed from MegaPose to SAM-6D and FoundationPose, which now saturate Linemod~\cite{labbe2022megapose,lin2024sam6d,wen2024foundationpose}. Calibration-free reconstruction (DUSt3R, VGGT) and endoscopic reconstruction (Endo3R, EndoNeRF) recover geometry from uncalibrated video~\cite{wang2024dust3r,wang2025vggt,guo2025endo3r,wang2022endonerf}, and neural rendering (3D Gaussian Splatting) delivers real-time photorealistic views~\cite{kerbl20233dgs}. Yet these advances are built for rigid objects, controlled illumination, or offline reconstruction---not for registering a known external model into a live, deforming, calibration-free endoscopic stream. We show quantitatively that the champions collapse here: FoundationPose's appearance-based scorer fails on surgical imagery (TRE 104\,mm), Endo3R drifts (ATE 34\,mm), and monocular depth on tissue is unreliable---an out-of-distribution gap that motivates a structural, geometry-first approach.
+\textbf{Progress and the out-of-distribution gap.} Object pose estimation has advanced rapidly: on the BOP benchmark, methods progressed from MegaPose to SAM-6D and FoundationPose, which now saturate Linemod~\cite{labbe2022megapose,lin2024sam6d,wen2024foundationpose}. Calibration-free reconstruction (DUSt3R, VGGT) and endoscopic reconstruction (Endo3R, EndoNeRF) recover geometry from uncalibrated video~\cite{wang2024dust3r,wang2025vggt,guo2025endo3r,wang2022endonerf}, and neural rendering (3D Gaussian Splatting) delivers real-time photorealistic views~\cite{kerbl20233dgs}. Yet these advances are built for rigid objects, controlled illumination, or offline reconstruction---not for registering a known external model into a live, deforming, calibration-free endoscopic stream. We show quantitatively that the champions collapse here: FoundationPose's appearance-based scorer fails on surgical imagery (TRE 104\,mm), Endo3R drifts (ATE 34\,mm), and monocular depth on tissue is unreliable---an out-of-distribution gap that motivates a structural, geometry-first approach.
 
-\subsection{Free-coordinate registration and observability}
-We therefore reformulate the problem from first principles. Rather than assuming a calibrated world frame, we treat the mapping $F:\mathcal{X}_{m}\leftrightarrow\mathcal{X}_{c}\leftrightarrow\mathcal{X}_{p}$ among the three frames as a jointly estimable object in which every parameter---intrinsics $K$, depth $z$, rigid pose $(\mathbf{R},\mathbf{t})$, deformation $W$, scale $s$, and model count---is individually optional and degradable. We call this \emph{free-coordinate registration}, because no frame is privileged as a fixed reference; all are estimated from the data and cross-validated against one another. Formally,
+\textbf{Free-coordinate registration and observability.} We therefore reformulate the problem from first principles. Rather than assuming a calibrated world frame, we treat the mapping $F:\mathcal{X}_{m}\leftrightarrow\mathcal{X}_{c}\leftrightarrow\mathcal{X}_{p}$ among the three frames as a jointly estimable object in which every parameter---intrinsics $K$, depth $z$, rigid pose $(\mathbf{R},\mathbf{t})$, deformation $W$, scale $s$, and model count---is individually optional and degradable. We call this \emph{free-coordinate registration}, because no frame is privileged as a fixed reference; all are estimated from the data and cross-validated against one another. Formally,
 \begin{equation}\label{eq:freemap}
 F = \pi_{D}\circ K\circ(\mathbf{R},\mathbf{t})\circ(I+W),
 \end{equation}
 a composition in which any factor may be clamped to the identity when unobserved. This framing exposes a question the classical pipeline hides: \emph{which factors are observable from the data at all}? Our central finding is that the limiting resource is not optimization machinery but \emph{observability}: the depth-residual operator of a single view is severely rank-deficient, so most deformation directions cannot be inferred from the image no matter how sophisticated the optimizer. We isolate this structure, show it explains tubular roll, smooth-warp rigidity equivalence, tangential-deformation invisibility, far-field lever amplification, and a ray-sliding counterexample, and use it to guide the estimator---deform only within the provably observable subspace. We also isolate a determinant-corrupting parameterization pitfall in differentiable Lie-group optimization whose signature (loss converges while geometry is wrong) both proves the argument and cautions the field.
 
-\subsection{Contributions}
+\textbf{Contributions.}
 \begin{enumerate}
 \item A \textbf{free-coordinate registration framework} with a multi-source correspondence engine and contour-gated arbitration (Sections~\ref{sec:form}, \ref{sec:engine}), unifying calibrated/uncalibrated and RGB/RGB-D inputs, resolving symmetric flips by silhouette (9/9 versus 5/9 for depth), and accepting a learned front-end (FreeRegNet) refined by geometric ICP that matches the engine at $5\times$ speed.
 \item \textbf{Observability-guided non-rigid registration} (Section~\ref{sec:rtw}): we prove the single-view depth-residual operator is rank-deficient to 151/648 directions (23\%) and deform only within the observable subspace, with a hierarchical lattice and region-focused refinement.
@@ -267,29 +263,7 @@ Training minimizes the free-coordinate objective~\eqref{eq:freemap} end-to-end--
 
 We also verified whether a large vision--language model helps: substituting a Qwen2-VL-2B vision tower (with VLoRA) for the lightweight ViT gives no accuracy gain at equal budget (ADD-S 0.200 versus the ViT's convergence trajectory reaching 0.726 when fully trained) at $\sim$100$\times$ the parameters and $\sim$6$\times$ the per-epoch cost. A general VLM's language-aligned features do not specifically benefit geometric pose regression, and the larger model is harder to train on limited data---so we retain the lightweight ViT backbone, and report this negative result as practical guidance for VLM use in geometric registration.
 
-Algorithm~\ref{alg:freereg} summarizes the complete FreeReg pipeline, tying together the components of Sections~\ref{sec:engine}--\ref{sec:render} into a single per-frame procedure with a one-time model-preparation stage.
-
-\begin{figure}[!tbp]
-\centering
-\fbox{\begin{minipage}{\dimexpr\columnwidth-2\fboxsep-2\fboxrule\relax}
-\small\textbf{Algorithm 1:} FreeReg (per sequence)\\[2pt]
-\rule{\linewidth}{0.4pt}
-\textbf{Prepare (once):} skeletonize model $\to$ centerline $\mathcal{C}$; build FFD lattice $\{\boldsymbol{\delta}_{j}\}$; init Gaussians $\{\mathbf{g}_{k}\}$ on the surface.\\[3pt]
-\textbf{For each frame} $t$:
-\begin{enumerate}\setlength{\itemsep}{1pt}
-\item \textbf{Correspondence:} generate hypotheses from SIFT, FPFH, render-and-compare.
-\item \textbf{Arbitrate:} score by contour + depth; pick $\mathbf{T}_{t}^{\mathrm{cand}}$.
-\item \textbf{Gate:} innovation $\boldsymbol{\eta}_{t}$ (right-invariant); reject outlier, coast, or relocate.
-\item \textbf{Rigid:} fuse gated measurement with filter prediction $\to$ $\mathbf{T}_{t}$.
-\item \textbf{Warp:} observability-guided RTW~\eqref{eq:rtwobj} within $\mathrm{span}(\mathbf{V}_{r})$; hierarchical focus.
-\item \textbf{Render:} co-anchored 3DGS; photometric residual $\to$ validation.
-\end{enumerate}
-\rule{\linewidth}{0.4pt}
-\textbf{Output:} pose $\mathbf{T}_{t}$, deformation $W$, composite render.
-\end{minipage}}
-\caption{The end-to-end FreeReg pipeline.}
-\label{alg:freereg}
-\end{figure}
+The complete FreeReg pipeline ties these components into a single per-frame procedure. A one-time preparation skeletonizes the model to its centerline, builds the FFD control lattice, and initializes surface Gaussians. Each frame then proceeds in six stages: (1)~\emph{correspondence}, generating pose hypotheses from SIFT, FPFH, and render-and-compare; (2)~\emph{arbitration}, scoring candidates by contour and depth to select a pose; (3)~\emph{gating}, applying the right-invariant innovation test to reject outliers, coast, or relocate; (4)~\emph{rigid fusion} of the gated measurement with the filter prediction; (5)~\emph{warp}, running observability-guided RTW~\eqref{eq:rtwobj} within the observable subspace with hierarchical focusing; and (6)~\emph{render}, compositing the co-anchored 3DGS model whose photometric residual feeds back as validation. The output per frame is the pose $\mathbf{T}_{t}$, the deformation $W$, and the fused render.
 
 %==============================================================================
 % EXPERIMENTS
@@ -560,7 +534,7 @@ Occlusion-edge accuracy & 100\% & 100\% \\
 \begin{figure}[!tbp]
 \centering
 \includegraphics[width=\columnwidth]{fig7b_scene.png}
-\caption{Scene-graph multi-model compositing in a triple-occlusion scene. Three panels---(left) the real background, (middle) the ground-truth composite, (right) our estimated composite---show three models (a bowl in front of a rabbit in front of a duck) occluding one another; the estimated composite reproduces the ground-truth occlusion ordering with 100\% occlusion-edge accuracy, confirming depth-aware compositing.}
+\caption{Scene-graph multi-model occlusion compositing. Three models---a bowl in front, a rabbit in the middle, and a duck at the back (labeled)---occlude one another in a triple-occlusion scene. The three panels show the real background (left), the ground-truth composite (middle), and our estimated composite (right). The estimated composite reproduces the ground-truth occlusion ordering (bowl $\supset$ rabbit $\supset$ duck, top strip) with 100\% occlusion-edge accuracy---the depth-aware scene graph composites each model in the correct layer, so nearer models correctly hide farther ones at every boundary.}
 \label{fig:scene}
 \end{figure}
 
