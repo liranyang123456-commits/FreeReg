@@ -541,24 +541,14 @@ Figures~\ref{fig:gal_ar} and~\ref{fig:gal_clin} present qualitative results acro
 
 \begin{figure*}[!tbp]
 \centering
-\begin{minipage}{0.24\textwidth}\centering\includegraphics[width=\linewidth]{gal_ar1.png}\\(a)\end{minipage}\hfill
-\begin{minipage}{0.24\textwidth}\centering\includegraphics[width=\linewidth]{gal_ar2.png}\\(b)\end{minipage}\hfill
-\begin{minipage}{0.24\textwidth}\centering\includegraphics[width=\linewidth]{gal_ar3.png}\\(c)\end{minipage}\hfill
-\begin{minipage}{0.24\textwidth}\centering\includegraphics[width=\linewidth]{gal_ar4.png}\\(d)\end{minipage}
+\includegraphics[width=\textwidth]{gal_ar.png}
 \caption{AR fusion across eight frames ($2\times4$) spanning real BOP scenes (a--d) and SCARED/clinical endoscopy (e--h), shown larger for clarity. In each, the registered 3D model is composited onto the live frame and stays anchored to the anatomy through motion and occlusion, the visual counterpart of the metric results in Table~\ref{tab:bop}.}
 \label{fig:gal_ar}
 \end{figure*}
 
 \begin{figure*}[!tbp]
 \centering
-\begin{minipage}{0.24\textwidth}\centering\includegraphics[width=\linewidth]{gc1.png}\\{\footnotesize (a) CT overlay}\end{minipage}\hfill
-\begin{minipage}{0.24\textwidth}\centering\includegraphics[width=\linewidth]{gc2.png}\\{\footnotesize (b) centerline}\end{minipage}\hfill
-\begin{minipage}{0.24\textwidth}\centering\includegraphics[width=\linewidth]{gc3.png}\\{\footnotesize (c) probe}\end{minipage}\hfill
-\begin{minipage}{0.24\textwidth}\centering\includegraphics[width=\linewidth]{gc4.png}\\{\footnotesize (d) clinical}\end{minipage}\\[2pt]
-\begin{minipage}{0.24\textwidth}\centering\includegraphics[width=\linewidth]{gc5.png}\\{\footnotesize (e) SCARED}\end{minipage}\hfill
-\begin{minipage}{0.24\textwidth}\centering\includegraphics[width=\linewidth]{gc6.png}\\{\footnotesize (f) SCARED}\end{minipage}\hfill
-\begin{minipage}{0.24\textwidth}\centering\includegraphics[width=\linewidth]{gc7.png}\\{\footnotesize (g) bronchoscopy}\end{minipage}\hfill
-\begin{minipage}{0.24\textwidth}\centering\includegraphics[width=\linewidth]{gc8.png}\\{\footnotesize (h) bronchoscopy}\end{minipage}
+\includegraphics[width=\textwidth]{gal_clin.png}
 \caption{End-to-end clinical and endoscopic fusion across twelve settings ($3\times4$). From real patient CT: the estimated airway overlay and centerline correspondence (a--e); SCARED AR, where the virtual model stays anchored while real geometry occludes it (f--h); and real bronchoscopy centerline registration (i--l). Together these show the full loop (from CT reconstruction to a fused, occlusion-correct endoscopic view) across real clinical and benchmark data.}
 \label{fig:gal_clin}
 \end{figure*}
