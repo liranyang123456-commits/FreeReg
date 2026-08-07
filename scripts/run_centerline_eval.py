@@ -201,6 +201,8 @@ def part_b(pts, cl_pts, junc_idx, axis_dir, device):
               f'({t_cl * 1000:.0f}ms)')
 
         # 叠加可视化: 投影中心线 (红) + 分叉 (黄) + 骨架 (绿)
+        # 注意: 论文 Fig 8 的「纯内镜视野」版本由
+        # scripts/make_centerline_endo_fig.py 生成 (裁剪 Ion Live-View)。
         vis = bgr.copy()
         P = transform(res['T'], cl_crop)
         z = P[:, 2]

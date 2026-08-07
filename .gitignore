@@ -1,5 +1,15 @@
-# 大数据与产物不入库 (本地保留)
-outputs/
+# 大数据与产物不入库 (本地保留), 但保留 outputs/paper 的论文源
+outputs/*
+!outputs/paper/
+# paper 内: 忽略大图/编译产物, 保留 tex/bib/cls/sty
+outputs/paper/figs/
+outputs/paper/*.pdf
+outputs/paper/*.png
+outputs/paper/*.aux
+outputs/paper/*.log
+outputs/paper/*.out
+outputs/paper/*.bbl
+outputs/paper/*.blg
 *.zip
 *.7z
 *.tar
@@ -9,5 +19,4 @@ __pycache__/
 .pytest_cache/
 .DS_Store
 Thumbs.db
-*.log
 outputs_backup/

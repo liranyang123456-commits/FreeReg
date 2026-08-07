@@ -293,7 +293,7 @@ The complete FreeReg pipeline ties these components into a single per-frame proc
 
 \textbf{Implementation.} The pipeline is implemented in PyTorch 2.8 (CUDA 12.8) with OpenCV, Open3D, and NumPy, on an NVIDIA RTX GPU. All geometric operations (SE(3)/SO(3) exp/log, projection, rasterization) are differentiable where gradients are needed. All evaluation scripts, the Windows build patches for FoundationPose and Endo3R, and a gallery of result figures across every dataset are released.
 
-\textbf{Metrics.} We report ADD/ADD-S and the BOP protocol (MSSD/MSPD/VSD, self-implemented) for single-frame pose; reprojection RMSE; pixel-jitter RMS and deviation for temporal consistency; target registration error (TRE, nearest-neighbour) for clinical registration; deformation-recovery error as a fraction of model extent; silhouette IoU and photometric residual for AR fusion fidelity; and PSNR/SSIM and FPS for rendering. Statistical comparison uses the Wilcoxon signed-rank test.
+\textbf{Metrics.} We report ADD/ADD-S and the BOP protocol (MSSD/MSPD/VSD, self-implemented) for single-frame pose; reprojection RMSE; pixel-jitter RMS and deviation for temporal consistency; target registration error (TRE, nearest-neighbour) for clinical registration; deformation-recovery error as a fraction of model extent; and PSNR/SSIM and FPS for rendering. Statistical comparison uses the Wilcoxon signed-rank test.
 
 \textbf{Datasets.} We evaluate on six resources, ordered from the primary clinical endpoint to supporting correctness checks, summarized in Table~\ref{tab:datasets}. (i)~\emph{Clinical CT-to-bronchoscopy cohort} (primary endpoint): 12 de-identified patient cases, 270 synthetic fly-through frames rendered from the real CT airways, for clinical target registration error (TRE). We explicitly separate two evidence classes throughout: (a)~\emph{real-CT geometry with synthetic fly-through}, which provides ground-truth poses for quantitative TRE; and (b)~\emph{real intra-operative bronchoscopic video}, which lacks ground truth and is used only for qualitative AR demonstration (Section~\ref{sec:exp}); the quantitative clinical numbers derive from class (a). (ii)~\emph{Real-colon FEM benchmark}: 8 scenes $\times$ 24 frames (192 total) of real colon anatomies with GT poses and GT press--release deformation, for non-rigid recovery. (iii)~\emph{SCARED}~\cite{allan2021scared}: 197 frames of one real endoscopic keyframe sequence with a GT camera trajectory, for real-video temporal and AR evaluation. (iv)~\emph{Virtual fly-through}: 200 frames of a synthetic trajectory over real CAD geometry for controlled temporal evaluation. (v)~\emph{BOP Linemod}~\cite{hodan2018bop}: 125 test samples (5 scenes $\times$ 25 frames, with RGB-D, masks, and GT 6D poses) for single-frame rigid registration, used as a correctness/generalization check against the pose literature; the learned front-end (FreeRegNet) trains on the full 13 objects with an 85/15 train/validation split per object. (vi)~\emph{BOP T-LESS}~\cite{hodan2018bop}: 308 test samples (5 test\_primesense scenes $\times$ 15 frames) of texture-less, symmetric objects, evaluated with the official ADD-S metric. All datasets are used for testing only; only FreeRegNet trains, on BOP objects as noted. SOTA comparisons use the official FoundationPose and Endo3R implementations and open3d ICP baselines. Additional public resources---EndoNeRF, C3VD colon meshes, Stereo\_Lap, BlendedMVS, DTU, and the full 20-scene T-LESS---are available for extension but are not required for the present evidence chain.
 
@@ -537,7 +537,7 @@ Occlusion-edge accuracy & 100\% & 100\% \\
 \begin{figure}[!tbp]
 \centering
 \includegraphics[width=\columnwidth]{fig8_render.png}
-\caption{Photometric residual as an online validation signal on the airway (synthetic fly-through render from the real CT model). Left: the observed frame. Middle: residual heatmap of a hypothesized mis-registered pose (hot = large photometric error). Right: residual after FreeReg refinement, where the heatmap cools toward the noise floor as the pose is corrected. The render residual localizes registration error without labels (a 1\,mm pose offset drops silhouette IoU to 0.62 and a 2\,mm offset to 0.44, while refinement halves the photometric residual from 0.325 to 0.163), motivating its use as the co-anchored validation signal (Section~\ref{sec:render}).}
+\caption{Photometric residual as an online validation signal on the airway (synthetic fly-through render from the real CT model). Left: the observed frame. Middle: residual heatmap of a hypothesized mis-registered pose (hot = large photometric error). Right: residual after FreeReg refinement, where the heatmap cools toward the noise floor as the pose is corrected. The render residual localizes registration error without labels, motivating its use as the co-anchored validation signal (Section~\ref{sec:render}).}
 \label{fig:render}
 \end{figure}
 
@@ -549,29 +549,6 @@ Occlusion-edge accuracy & 100\% & 100\% \\
 \end{figure}
 
 \textbf{SOTA comparison.} Table~\ref{tab:sota} compares general-purpose SOTA against our pipeline on the clinical synthetic fly-through protocol (identical frames/landmarks). FoundationPose fails catastrophically (TRE 104\,mm, rot 119.7$\degree$, its scorer requires photorealistic appearance), Endo3R drifts (ATE 34\,mm, dropping 7/30 frames), Depth-Anything-V2 is unreliable on tissue (correlation 0.30 mean), while our pipeline achieves TRE 10.5\,mm on this sequence and 4.23\,mm on the 12-case cohort. General-purpose pose/reconstruction SOTA is out-of-distribution in endoscopy; our structural/geometric approach is the designed fit.
-
-\textbf{Robustness and degradability.} Table~\ref{tab:robust} quantifies how the free-coordinate pipeline degrades as observations weaken. (i)~\emph{Depth}: on the airway sequence, true RGB-D reaches 8.2\,mm TRE; a monocular-depth prior (scale/bias drift, 3\,mm noise) stays comparable (7.9\,mm) since trimmed ICP absorbs depth noise, whereas RGB-only centerline registration collapses to 28.8\,mm (9\% $<$10\,mm)---the map degrades gracefully with depth quality, but not without depth. (ii)~\emph{Occlusion}: synthetic occluders covering 0--60\% keep 100\% success while rotation error rises 3.8$\degree\to$10.8$\degree$. (iii)~\emph{Initialization}: rigid BOP objects converge from up to 45$\degree$/40\,mm, but on the self-similar tubular airway trimmed ICP reaches 1.03\,mm versus 5.48\,mm for vanilla ICP, confirming trimming matters most in low-observability geometries.
-
-\begin{table}[t]
-\centering
-\caption{Robustness and degradability of the free-coordinate pipeline.}
-\label{tab:robust}
-\setlength{\tabcolsep}{3pt}\small
-\begin{tabular}{llc}
-\toprule
-Stress & Condition & Result \\
-\midrule
-\multirow{3}{*}{\shortstack[l]{Depth\\quality}} & RGB-D (true) & 8.2\,mm, 70\%$<$10\,mm \\
- & Mono prior & 7.9\,mm, 70\%$<$10\,mm \\
- & RGB only & 28.8\,mm, 9\%$<$10\,mm \\
-\midrule
-Occlusion & 0\%$\to$60\% occl. & 100\% succ., 3.8$\to$10.8$\degree$ \\
-\midrule
-\multirow{2}{*}{\shortstack[l]{Init.}} & BOP, 45$\degree$/40\,mm & 100\% converge \\
- & Airway axial & 1.03 vs 5.48\,mm (trim/van.) \\
-\bottomrule
-\end{tabular}
-\end{table}
 
 \begin{table}[t]
 \centering
@@ -594,7 +571,7 @@ Depth-Anything-V2 & depth corr. & 0.30 (unreliable) \\
 
 \begin{figure*}[!tbp]
 \centering
-\includegraphics[width=\textwidth,height=0.09\textheight,keepaspectratio]{gal_ar.png}
+\includegraphics[width=\textwidth,height=0.20\textheight,keepaspectratio]{gal_ar.png}
 \caption{Registration and AR fusion on BOP Linemod across seven objects and scenes. Each panel shows the live RGB frame with the registered model's projected silhouette (green contour and fill) and coordinate axes overlaid, aligning with the true object under viewpoint change and occlusion (Table~\ref{tab:bop}).}
 
 \label{fig:gal_ar}
@@ -602,14 +579,14 @@ Depth-Anything-V2 & depth corr. & 0.30 (unreliable) \\
 
 \begin{figure*}[!tbp]
 \centering
-\includegraphics[width=\textwidth,height=0.11\textheight,keepaspectratio]{gal_clin_bronch.png}
+\includegraphics[width=\textwidth,height=0.22\textheight,keepaspectratio]{gal_clin_bronch.png}
 \caption{CT-to-bronchoscopy registration on the clinical cohort. Each panel is a pure endoscopic Live-View crop with FreeReg centerline correspondence (green lumen skeleton; red projected CT centerline; yellow bifurcations), spanning diverse airway depths and bifurcations where depth-based ICP is unreliable, at 4.23\,mm mean TRE (Table~\ref{tab:clinical}).}
 \label{fig:gal_clin}
 \end{figure*}
 
 \begin{figure*}[!tbp]
 \centering
-\includegraphics[width=\textwidth,height=0.09\textheight,keepaspectratio]{gal_clin_scared.png}
+\includegraphics[width=\textwidth,height=0.16\textheight,keepaspectratio]{gal_clin_scared.png}
 \caption{AR fusion on SCARED real endoscopic video. Across viewpoints the registered virtual model (green) remains anchored to the tissue under partial occlusion, showing temporal-coherent, depth-aware fusion from the co-anchored renderer.}
 \label{fig:gal_scared}
 \end{figure*}
@@ -619,15 +596,15 @@ Depth-Anything-V2 & depth corr. & 0.30 (unreliable) \\
 %==============================================================================
 \section{Discussion}\label{sec:disc}
 
-\textbf{Toward camera-only image-guided bronchoscopy.} Deployed ENB systems report 5--10\,mm localization error and depend on a field generator and tracked probe; our camera-only pipeline registers the CT airway at 4.23\,mm mean error (92\% under 10\,mm) at 30--80\,FPS, inside the accuracy range needed to keep a peripheral target within the biopsy working channel, on imagery the bronchoscope already produces. The far-field lever law (error $\propto$ model span) implies that cropping the registered model to the region of interest roughly triples accuracy (2.2--2.4\,mm versus 7.9--8.4\,mm), a step requiring no extra hardware. The observability analysis also tells the operator in advance how much deformation the monocular view can support (23\% of directions), so the system can flag when its estimate is reliable rather than silently drifting.
+\textbf{Toward camera-only image-guided bronchoscopy.} The clinical motivation of this work is to raise the diagnostic yield of transbronchial biopsy while removing the hardware and setup burden of electromagnetic navigation. Deployed ENB systems report 5--10\,mm localization error and depend on a field generator and a tracked probe; our camera-only pipeline registers the CT airway at 4.23\,mm mean error (92\% under 10\,mm) at 30--80\,FPS, inside the accuracy range needed to keep a peripheral target within the biopsy working channel, and it runs on imagery the bronchoscope already produces. The far-field lever law we quantify (error $\propto$ model span) has a direct procedural consequence: cropping the registered airway to the lobe of interest roughly triples accuracy (2.2--2.4\,mm versus 7.9--8.4\,mm), a step that requires no additional hardware and maps naturally onto how a bronchoscopist actually plans a path. Equally important for clinical translation, the observability analysis tells the operator in advance how much of the airway deformation the monocular view can support (23\% of directions), so the system can signal when its own estimate is reliable rather than silently drifting, a property that fixed-pipeline navigation systems do not expose.
 
 \textbf{Observability is the central scarcity.} Across experiments the same theme recurs: tubular roll, smooth-warp rigidity equivalence, tangential deformation, far-field lever amplification, and ray-sliding. The observability decomposition unifies these: it explains why metrics must decompose axial and lateral error, why single-view full-3D warp recovery is ill-posed, and why recovery ceilings are observational, not algorithmic, limits.
 
 \textbf{A cautionary note on differentiable Lie-group parameterization.} The $\det(\mathbf{R})\approx49$ defect isolated here (one line ($\mathbf{K}=\mathbf{K}-\mathbf{K}^{\top}$) that doubled an already-antisymmetric skew matrix and silently broke Rodrigues orthonormality) is easy to introduce and hard to detect, because optimizers partially compensate through reparameterization: loss curves look healthy while geometry is wrong. We recommend determinant and orthonormality assertions as first-class invariants in any differentiable SE(3)/SO(3) code.
 
-\textbf{Limitations and future work.} Our evidence has clear boundaries. \emph{Generality}: registering an arbitrary 3D model into an arbitrary stream is the framework's design goal, not a fully established claim; we validate on rigid CAD/BOP, CT airways, and endoscopic video. \emph{Clinical evidence}: quantitative TRE uses real CT with synthetic fly-throughs (ground-truth poses); real intra-operative video is qualitative. Real-video ground truth and multi-center cohorts are needed before clinical claims. \emph{Benchmark relation}: the BOP comparison is a cross-domain sanity check; FoundationPose targets rigid pose with calibrated intrinsics, FreeReg targets calibration-free registration in deforming endoscopy. \emph{Observability}: single-view registration recovers only 23\% of deformation directions (an observational limit); widening the subspace is the concrete path. \emph{The engine} is hand-built; a learned front end trained on the free-coordinate objective is a drop-in upgrade. \emph{Deployment}: the full loop must run inside the endoscopy hardware budget, feasible per our 30--80\,FPS but unvalidated in the operating room; 4D covariance is frozen under deformation, and most clinical archives beyond the 12 cases were corrupt at source.
+\textbf{Limitations and future work.} Our evidence has clear boundaries that define the agenda. \emph{Generality boundary}: the ability to register an arbitrary 3D model into an arbitrary image/video stream is the framework's design goal, not a fully established empirical claim; we validate it on rigid CAD/BOP objects, CT airway models, and endoscopic video, and broader domains remain future work. \emph{Clinical evidence boundary}: quantitative clinical TRE derives from real CT airways with synthetic fly-throughs providing ground-truth poses, while real intra-operative video currently supports qualitative AR demonstration; real-video manual ground truth (via our centerline-proposal + dual-reader workflow) and multi-center cohorts are needed before clinical claims. \emph{Benchmark relation}: the BOP comparison with FoundationPose is a cross-domain sanity check rather than head-to-head competition; FoundationPose targets rigid-object pose estimation with calibrated intrinsics, whereas FreeReg targets calibration-free registration in deforming endoscopy. \emph{Observability}: single-view registration recovers only 23\% of deformation directions, and the dent family converges to a $\sim$30\% ceiling under our observation configuration, an observational limit, not an algorithmic defect; widening the subspace (multi-view input, texture, denser support) is the concrete path, and our spectral analysis identifies which directions to target. \emph{The engine}: it is hand-built, and single-shot symmetry resolution remains a classical ceiling (FoundationPose's learned scorer is stronger and its tracking smoother); a learned correspondence front end trained on the free-coordinate objective is the natural, drop-in upgrade. \emph{Deployment}: the full loop must run inside the endoscopy hardware budget, which our 30--80\,FPS registration and 112\,FPS rendering suggest is feasible but unvalidated in the operating room. 4D covariance is frozen under deformation, and most clinical archives beyond the 12 analyzed cases were corrupt at source.
 
-\textbf{Reproducibility and code availability.} The full FreeReg pipeline (geometry kernels, correspondence engine, observability-guided RTW, manifold Kalman filter, co-anchored renderer and scene graph, FreeRegNet front-end, and all evaluation scripts) and the Windows build patches for FoundationPose/Endo3R are released at \url{https://github.com/liranyang123456-commits/FreeReg} (to be made public upon publication). Datasets are referenced in place; clinical data are subject to the hospital's data-governance process (Ethics Statement).
+\textbf{Reproducibility and code availability.} The full FreeReg pipeline (geometry kernels, the correspondence engine, observability-guided RTW, the manifold Kalman filter, the co-anchored renderer and scene graph, the FreeRegNet front-end, and all evaluation scripts) is released as a version-controlled repository, together with the Windows build patches for FoundationPose/Endo3R and the result figures across every dataset; it will be made publicly available upon publication. Datasets are referenced in place; the clinical data are subject to the hospital's data-governance process (Ethics Statement).
 
 %==============================================================================
 % CONCLUSION

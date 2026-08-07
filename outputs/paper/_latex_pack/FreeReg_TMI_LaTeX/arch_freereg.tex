@@ -1,0 +1,100 @@
+\documentclass[border=10pt,tikz]{standalone}
+\usepackage{tikz}
+\usetikzlibrary{positioning,arrows.meta,calc}
+
+% 3D block, 以 (cx, cy) 为几何中心, 宽 w 高 h, 标签, 主色
+\newcommand{\blockc}[7]{%
+  % #1 name, #2 cx, #3 cy, #4 w, #5 h, #6 label, #7 front color
+  \begin{scope}[shift={(#2,#3)}]
+    \def\dx{0.28}\def\dy{0.28}
+    \pgfmathsetmacro{\w}{#4}\pgfmathsetmacro{\h}{#5}
+    \fill[blkSide] (\w/2,-\h/2) -- (\w/2+\dx,-\h/2+\dy) -- (\w/2+\dx,\h/2+\dy) -- (\w/2,\h/2) -- cycle;
+    \fill[blkTop] (-\w/2,\h/2) -- (-\w/2+\dx,\h/2+\dy) -- (\w/2+\dx,\h/2+\dy) -- (\w/2,\h/2) -- cycle;
+    \fill[#7] (-\w/2,-\h/2) rectangle (\w/2,\h/2);
+    \draw[blkEdge, line width=0.4pt] (-\w/2,-\h/2) rectangle (\w/2,\h/2);
+    \node[align=center, font=\footnotesize] at (0,0) {#6};
+    \coordinate (#1-west) at (-\w/2,0);
+    \coordinate (#1-east) at (\w/2+\dx,0);
+    \coordinate (#1-south) at (0,-\h/2);
+    \coordinate (#1-north) at (0,\h/2);
+  \end{scope}%
+}
+
+\begin{document}
+\begin{tikzpicture}[conn/.style={-{Stealth[length=2mm]}, line width=1pt, draw=gray!60!black},
+  fb/.style={-{Stealth[length=1.8mm]}, line width=0.8pt, dashed, draw=red!60!black}]
+% 简化配色: 数据(绿) / 处理(蓝) / 输出(橙)
+\colorlet{colData}{green!55!black!20}
+\colorlet{colProc}{blue!55!black!16}
+\colorlet{colOut}{orange!60!black!25}
+\colorlet{blkSide}{black!16}
+\colorlet{blkTop}{black!9}
+\colorlet{blkEdge}{black!45}
+
+% ---- 第1列: 输入 (2个压缩子块, 与单列同垂直带, 居中 y=0) ----
+\blockc{inmodel}{0}{0.4}{2.0}{0.62}{3D model\\CT / CAD}{colData}
+\blockc{inimg}{0}{-0.4}{2.0}{0.62}{Image / video\\RGB-D / mono}{colData}
+
+% ---- 第2列: 对应引擎 (3个压缩子块, 与单列同垂直带, 居中 y=0) ----
+\blockc{csift}{3.2}{0.52}{2.6}{0.44}{Texture\\SIFT}{colProc}
+\blockc{cfpfh}{3.2}{0.0}{2.6}{0.44}{Geometric\\FPFH}{colProc}
+\blockc{crnc}{3.2}{-0.52}{2.6}{0.44}{Render\&Compare}{colProc}
+
+% ---- 第3列: 仲裁 ----
+\blockc{arb}{6.4}{0}{2.2}{1.5}{Contour-gated\\arbitration}{colProc}
+
+% ---- 第4列: 刚体位姿 ----
+\blockc{pose}{9.2}{0}{2.0}{1.5}{Rigid pose\\$(\mathbf{R},\mathbf{t})$}{colProc}
+
+% ---- 第5列: Kalman ----
+\blockc{kal}{11.9}{0}{2.4}{1.5}{Manifold SE(3)\\Kalman + gate}{colProc}
+
+% ---- 第6列: RTW ----
+\blockc{rtw}{15.0}{0}{2.7}{1.7}{Observability-\\guided RTW}{colProc}
+
+% ---- 第7列: 3DGS ----
+\blockc{render}{18.4}{0}{2.7}{1.7}{Co-anchored\\3DGS render}{colProc}
+
+% ---- 第8列: 场景图 ----
+\blockc{scene}{21.7}{0}{2.4}{1.5}{Scene graph\\occlusion}{colProc}
+
+% ---- 第9列: 输出 ----
+\blockc{out}{24.7}{0}{2.1}{1.7}{MR composite\\+ validation}{colOut}
+
+% ---- 连接 ----
+\draw[conn] (inmodel-east) -- (csift-west);
+\draw[conn] (inmodel-east) -- (cfpfh-west);
+\draw[conn] (inimg-east) -- (cfpfh-west);
+\draw[conn] (inimg-east) -- (crnc-west);
+\draw[conn] (csift-east) -- (arb-west);
+\draw[conn] (cfpfh-east) -- (arb-west);
+\draw[conn] (crnc-east) -- (arb-west);
+\draw[conn] (arb-east) -- (pose-west);
+\draw[conn] (pose-east) -- (kal-west);
+\draw[conn] (kal-east) -- (rtw-west);
+\draw[conn] (rtw-east) -- (render-west);
+\draw[conn] (render-east) -- (scene-west);
+\draw[conn] (scene-east) -- (out-west);
+
+% 验证反馈 (红虚线, 横平竖直直角, 压低占位)
+\draw[fb] (out-south) -- ++(0,-0.55) -|
+  node[pos=0.25, below, font=\scriptsize\itshape, text=red!55!black]{photometric residual (online validation)}
+  (rtw-south);
+
+% 每列阶段标签 (与 inputs/output 一致风格)
+\node[font=\scriptsize\itshape, text=gray!60!black] at (0,-1.35) {inputs};
+\node[font=\scriptsize\itshape, text=gray!60!black] at (3.2,-1.35) {correspondence};
+\node[font=\scriptsize\itshape, text=gray!60!black] at (6.4,-1.35) {arbitrate};
+\node[font=\scriptsize\itshape, text=gray!60!black] at (9.2,-1.35) {rigid pose};
+\node[font=\scriptsize\itshape, text=gray!60!black] at (11.9,-1.35) {temporal filter};
+\node[font=\scriptsize\itshape, text=gray!60!black] at (15.0,-1.35) {deform (RTW)};
+\node[font=\scriptsize\itshape, text=gray!60!black] at (18.4,-1.35) {render};
+\node[font=\scriptsize\itshape, text=gray!60!black] at (21.7,-1.35) {occlusion};
+\node[font=\scriptsize\itshape, text=gray!60!black] at (24.7,-1.5) {output};
+
+% 可选学习前端 FreeRegNet (虚线, 并联对应引擎 → 仲裁)
+\blockc{frn}{3.2}{1.55}{2.6}{0.5}{FreeRegNet (learned, opt.)}{colData}
+\draw[conn, dashed] (inmodel-east) ++(0.3,0.55) |- (frn-west);
+\draw[conn, dashed] (frn-east) -- (arb-west);
+\end{tikzpicture}
+\end{document}
