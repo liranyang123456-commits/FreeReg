@@ -550,7 +550,7 @@ Occlusion-edge accuracy & 100\% & 100\% \\
 
 \textbf{SOTA comparison.} Table~\ref{tab:sota} compares general-purpose SOTA against our pipeline on the clinical synthetic fly-through protocol (identical frames/landmarks). FoundationPose fails catastrophically (TRE 104\,mm, rot 119.7$\degree$, its scorer requires photorealistic appearance), Endo3R drifts (ATE 34\,mm, dropping 7/30 frames), Depth-Anything-V2 is unreliable on tissue (correlation 0.30 mean), while our pipeline achieves TRE 10.5\,mm on this sequence and 4.23\,mm on the 12-case cohort. General-purpose pose/reconstruction SOTA is out-of-distribution in endoscopy; our structural/geometric approach is the designed fit.
 
-\textbf{Robustness and degradability.} Table~\ref{tab:robust} quantifies how the free-coordinate pipeline degrades as observations weaken. (i)~\emph{Depth}: on the airway sequence, true RGB-D reaches 8.2\,mm TRE; a monocular-depth prior (scale/bias drift, 3\,mm noise) stays comparable (7.9\,mm) since trimmed ICP absorbs depth noise, whereas RGB-only centerline registration collapses to 28.8\,mm (9\% $<$10\,mm)---the map degrades gracefully with depth quality, but not without depth. (ii)~\emph{Occlusion}: synthetic occluders covering 0--60\% keep 100\% success while rotation error rises 3.8$\degree\to$10.8$\degree$. (iii)~\emph{Initialization}: rigid BOP objects converge from up to 45$\degree$/40\,mm, but on the self-similar tubular airway trimmed ICP reaches 1.03\,mm versus 5.48\,mm for vanilla ICP, confirming trimming matters most in low-observability geometries.
+\textbf{Robustness and degradability.} Table~\ref{tab:robust} quantifies how the pipeline degrades as observations weaken. (i)~\emph{Depth}: on the airway sequence, true RGB-D reaches 8.2\,mm TRE, but \emph{real} monocular depth (Depth-Anything-V2) collapses to 65\,mm on featureless tissue---its failure is structured bias, not noise---so the RGB-only centerline path (28.8\,mm, no depth) is the reliable fallback, outperforming the learned depth network. (ii)~\emph{Occlusion}: synthetic occluders covering 0--60\% keep 100\% success while rotation error rises 3.8$\degree\to$10.8$\degree$. (iii)~\emph{Initialization}: rigid BOP objects converge from up to 45$\degree$/40\,mm, but on the self-similar tubular airway trimmed ICP reaches 1.03\,mm versus 5.48\,mm for vanilla ICP, confirming trimming matters most in low-observability geometries.
 
 \begin{table}[t]
 \centering
@@ -562,7 +562,7 @@ Occlusion-edge accuracy & 100\% & 100\% \\
 Stress & Condition & Result \\
 \midrule
 \multirow{3}{*}{\shortstack[l]{Depth\\quality}} & RGB-D (true) & 8.2\,mm, 70\%$<$10\,mm \\
- & Mono prior & 7.9\,mm, 70\%$<$10\,mm \\
+ & DA-V2 (real mono) & 65\,mm, 4\%$<$10\,mm \\
  & RGB only & 28.8\,mm, 9\%$<$10\,mm \\
 \midrule
 Occlusion & 0\%$\to$60\% occl. & 100\% succ., 3.8$\to$10.8$\degree$ \\
