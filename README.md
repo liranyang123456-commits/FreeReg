@@ -1,10 +1,14 @@
 # Free_coordinate_MR_Registration
 
 > **任意3D模型 → 任意图像/视频的AR/MR注册系统**
-> 
+>
 > 给定任意一张图像（或视频序列）和任意一个/多个3D模型，
 > 计算2D像素 ↔ 3D模型 ↔ 相机坐标系之间的投影映射，
 > 并在AR/MR渲染中无失真、动态变化无失真地融合呈现。
+
+**代码仓库**: <https://github.com/liranyang123456-commits/FreeReg> （论文接收后转 public）
+
+**投稿论文**: *FreeReg: Free-Coordinate Registration of 3D Models for Augmented Reality in Image-Guided Bronchoscopy*（IEEE TMI，10 页，见 `outputs/paper/freereg_tbme_full.tex`）
 
 ## 文档导航
 
@@ -30,6 +34,7 @@
 | **IEEE TBME 论文** | [`docs/18_IEEE_TBME_paper_FreeReg.md`](docs/18_IEEE_TBME_paper_FreeReg.md) | **正式投稿版全文 (模板结构, 数据图件全)** |
 | **论文 PDF (已编译)** | [`outputs/paper/freereg_ieee_tbme.pdf`](outputs/paper/freereg_ieee_tbme.pdf) | **IEEE 双栏 5页 9图, pdflatex 编译通过** |
 | **实验总览** | [`docs/19_实验总览_流程图与性能总表.md`](docs/19_实验总览_流程图与性能总表.md) | 流程图(mermaid)+性能总表+图集索引+覆盖度清单 |
+| **鲁棒性退化实验** | [`docs/20_鲁棒性与退化实验.md`](docs/20_鲁棒性与退化实验.md) | **深度退化曲线/遮挡/初始化/AR视觉量化 (TMI Table XI)** |
 | **核心库** | [`src/`](src/) | geometry/rasterize/pose_estimation/nonrigid_rtw/render_compare_engine/appearance_engine/gaussian_renderer/scene_graph/pipeline/metrics |
 
 ## 一句话方案
