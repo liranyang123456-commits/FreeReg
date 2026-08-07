@@ -76,6 +76,62 @@ def corrupt_depth_mono(depth, rng):
     return d
 
 
+# ---- 真实 Depth-Anything-V2 单目深度 (可选, 若本地可用) ----
+DAV2_ROOT = Path(r'E:\SOTA_Methods\Depth-Anything-V2')
+_dav2 = {'model': None, 'device': None}
+
+
+def load_dav2(device):
+    if _dav2['model'] is not None:
+        return _dav2['model']
+    if not DAV2_ROOT.exists():
+        return None
+    sys.path.insert(0, str(DAV2_ROOT))
+    from depth_anything_v2.dpt import DepthAnythingV2
+    cfg = {'encoder': 'vits', 'features': 64,
+           'out_channels': [48, 96, 192, 384]}
+    m = DepthAnythingV2(**cfg)
+    m.load_state_dict(torch.load(
+        DAV2_ROOT / 'checkpoints' / 'depth_anything_v2_vits.pth',
+        map_location='cpu'))
+    m = m.to(device).eval()
+    _dav2['model'], _dav2['device'] = m, device
+    print('  [DA-V2 vits 加载完成]')
+    return m
+
+
+def dav2_metric_depth(rgb_u8, depth_hyp, fg, device):
+    """DA-V2 相对深度 → 伪度量深度.
+
+    DA-V2 输出相对视差 (大=近). 反转得伪深度后, 用当前位姿假设的
+    渲染深度 depth_hyp (非 GT) 做 scale+shift 最小二乘对齐 (无 GT 泄漏).
+    """
+    m = load_dav2(device)
+    if m is None:
+        return None
+    disp = m.infer_image(rgb_u8, 240)  # (h,w) relative disparity
+    disp = cv2.resize(disp, (depth_hyp.shape[1], depth_hyp.shape[0]))
+    disp = disp.astype(np.float64)
+    pseudo = 1.0 / (disp + 1e-3)
+    if fg.sum() < 50:
+        return None
+    # scale+shift 对齐: d = a*pseudo + b, 最小二乘拟合 depth_hyp[fg]
+    x = pseudo[fg].ravel()
+    y = depth_hyp[fg].ravel()
+    A = np.stack([x, np.ones_like(x)], 1)
+    # 鲁棒: 用中位初始化 + 两次 IRLS 收紧
+    a, b = np.linalg.lstsq(A, y, rcond=None)[0]
+    for _ in range(2):
+        r = np.abs(a * x + b - y)
+        w = 1.0 / (r + np.percentile(r, 50) + 1e-6)
+        Aw = A * w[:, None]
+        a, b = np.linalg.lstsq(Aw, y * w, rcond=None)[0]
+    d = a * pseudo + b
+    d[~fg] = 0
+    d[d <= 0] = 0
+    return d
+
+
 def run_tier(tier, model, device):
     pts = model.points
     poses_gt = make_flythrough_poses(model, n_frames=N_FRAMES, seed=0)
@@ -105,8 +161,20 @@ def run_tier(tier, model, device):
         if tier == 'rgbd':
             d_obs = depth.copy()
             d_obs[fg] += rng.normal(0, 0.8, int(fg.sum()))
-        elif tier == 'mono':
+        elif tier == 'mono_sim':
             d_obs = corrupt_depth_mono(depth, rng)
+        elif tier == 'mono_dav2':
+            # 真实 DA-V2: 从 RGB 估计相对深度, 用当前位姿假设渲染深度对齐尺度
+            rgb_u8 = cv2.cvtColor(
+                (np.clip(out['feat'].cpu().numpy(), 0, 1) * 255
+                 ).astype(np.uint8), cv2.COLOR_RGB2BGR)
+            # 尺度参考: 用 T_init (当前位姿假设) 的渲染深度, 非 GT
+            depth_hyp = render_model(pts, colors, T_init, K, H, W, radius=1,
+                                     device=device)['depth'].cpu().numpy()
+            d_obs = dav2_metric_depth(rgb_u8, depth_hyp, depth_hyp > 0,
+                                      device)
+            if d_obs is None:  # 模型不可用 → 退化为模拟先验
+                d_obs = corrupt_depth_mono(depth, rng)
         else:
             d_obs = None
 
@@ -157,9 +225,11 @@ def main():
     print('单目退化曲线 (E1 fly-through, 40帧):')
     print('=' * 62)
     rows = {}
-    for tier, label in [('rgbd', 'RGB-D 真深度'),
-                        ('mono', '单目深度先验'),
-                        ('rgb', '仅 RGB (无深度)')]:
+    tiers = [('rgbd', 'RGB-D 真深度'),
+             ('mono_sim', '单目深度先验(模拟)'),
+             ('mono_dav2', '单目深度 DA-V2(真实)'),
+             ('rgb', '仅 RGB (无深度)')]
+    for tier, label in tiers:
         t0 = time.time()
         r = run_tier(tier, model, device)
         rows[tier] = r
