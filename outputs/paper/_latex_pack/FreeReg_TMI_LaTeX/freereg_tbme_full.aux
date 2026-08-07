@@ -1,0 +1,137 @@
+\relax 
+\providecommand\hyper@newdestlabel[2]{}
+\providecommand\HyField@AuxAddToFields[1]{}
+\providecommand\HyField@AuxAddToCoFields[2]{}
+\citation{gildea2006enb}
+\citation{kabsch1976,umeyama1991,besl1992icp}
+\citation{labbe2022megapose,lin2024sam6d,wen2024foundationpose}
+\citation{wang2024dust3r,wang2025vggt,guo2025endo3r,wang2022endonerf}
+\citation{kerbl20233dgs}
+\@writefile{toc}{\contentsline {section}{\numberline {I}Introduction}{1}{section.1}\protected@file@percent }
+\newlabel{sec:intro}{{I}{1}{Introduction}{section.1}{}}
+\citation{hodan2018bop}
+\citation{labbe2022megapose}
+\citation{lin2024sam6d}
+\citation{wen2024foundationpose}
+\citation{kabsch1976}
+\citation{umeyama1991}
+\citation{besl1992icp}
+\citation{rusu2009fpfh,fischler1981ransac}
+\citation{lepetit2009epnp}
+\citation{wang2024dust3r}
+\citation{wang2025vggt}
+\citation{guo2025endo3r}
+\citation{campos2021orbslam3}
+\citation{teed2021droidslam}
+\citation{sederberg1986ffd,rueckert1999nonrigid}
+\citation{sumner2007embedded}
+\citation{newcombe2015dynamicfusion}
+\citation{wu20244dgs}
+\citation{mountney2010deformation}
+\citation{stoyanov2010stereo}
+\citation{kalman1960,sola2018lie}
+\citation{bernhardt2017ar,vavra2017ar}
+\citation{gildea2006enb}
+\citation{allan2021scared}
+\citation{bobrow2023c3vd}
+\citation{kerbl20233dgs}
+\citation{wang2022endonerf}
+\citation{zhu2023endogaussian}
+\citation{laine2020nvdiffrast}
+\@writefile{toc}{\contentsline {section}{\numberline {II}Related Work}{2}{section.2}\protected@file@percent }
+\newlabel{sec:related}{{II}{2}{Related Work}{section.2}{}}
+\@writefile{lof}{\contentsline {figure}{\numberline {1}{\ignorespaces What FreeReg does at a glance. Given an arbitrary 3D model (CT airway or CAD mesh) and an arbitrary image/video stream (RGB-D or monocular), FreeReg estimates the free-coordinate projection map $\mathbf  {x}_{p}=\pi _{D}(K\,\mathbf  {T}_{cm}(\mathbf  {X}_{m}+W(\mathbf  {X}_{m})))$ into the camera and pixel frames---no privileged world frame, each factor (intrinsics, depth, pose, deformation) estimated or clamped---and composites an anchored, occlusion-aware AR/MR overlay whose photometric residual feeds back as an online validation signal.}}{2}{figure.1}\protected@file@percent }
+\newlabel{fig:concept}{{1}{2}{What FreeReg does at a glance. Given an arbitrary 3D model (CT airway or CAD mesh) and an arbitrary image/video stream (RGB-D or monocular), FreeReg estimates the free-coordinate projection map $\mathbf {x}_{p}=\pi _{D}(K\,\mathbf {T}_{cm}(\mathbf {X}_{m}+W(\mathbf {X}_{m})))$ into the camera and pixel frames---no privileged world frame, each factor (intrinsics, depth, pose, deformation) estimated or clamped---and composites an anchored, occlusion-aware AR/MR overlay whose photometric residual feeds back as an online validation signal}{figure.1}{}}
+\@writefile{toc}{\contentsline {section}{\numberline {III}Free-Coordinate Formulation}{2}{section.3}\protected@file@percent }
+\newlabel{sec:form}{{III}{2}{Free-Coordinate Formulation}{section.3}{}}
+\@writefile{toc}{\contentsline {subsection}{\numberline {III-A}Coordinate frames and the projection chain}{2}{subsection.3.1}\protected@file@percent }
+\citation{longuet1981,hartley2003mvg}
+\citation{sederberg1986ffd}
+\@writefile{lot}{\contentsline {table}{\numberline {I}{\ignorespaces Correspondence taxonomy and solvers.}}{3}{table.1}\protected@file@percent }
+\newlabel{tab:taxonomy}{{I}{3}{Correspondence taxonomy and solvers}{table.1}{}}
+\@writefile{lot}{\contentsline {table}{\numberline {II}{\ignorespaces Degradability of the free map $F$ across scenarios.}}{3}{table.2}\protected@file@percent }
+\newlabel{tab:degrade}{{II}{3}{Degradability of the free map $F$ across scenarios}{table.2}{}}
+\@writefile{toc}{\contentsline {subsection}{\numberline {III-B}The correspondence taxonomy}{3}{subsection.3.2}\protected@file@percent }
+\newlabel{sec:corr}{{III-B}{3}{The correspondence taxonomy}{subsection.3.2}{}}
+\@writefile{toc}{\contentsline {section}{\numberline {IV}Method}{3}{section.4}\protected@file@percent }
+\newlabel{sec:method}{{IV}{3}{Method}{section.4}{}}
+\@writefile{toc}{\contentsline {subsection}{\numberline {IV-A}Multi-source correspondence with contour arbitration}{3}{subsection.4.1}\protected@file@percent }
+\newlabel{sec:engine}{{IV-A}{3}{Multi-source correspondence with contour arbitration}{subsection.4.1}{}}
+\newlabel{prop:lever}{{2}{3}{Far-field lever amplification}{figure.2}{}}
+\@writefile{toc}{\contentsline {subsection}{\numberline {IV-B}Observability-guided and hierarchical RTW}{3}{subsection.4.2}\protected@file@percent }
+\newlabel{sec:rtw}{{IV-B}{3}{Observability-guided and hierarchical RTW}{subsection.4.2}{}}
+\newlabel{eq:ffd}{{1}{3}{Observability-guided and hierarchical RTW}{equation.1}{}}
+\newlabel{eq:trilinear}{{2}{3}{Observability-guided and hierarchical RTW}{equation.2}{}}
+\citation{sola2018lie}
+\@writefile{lof}{\contentsline {figure}{\numberline {2}{\ignorespaces FreeReg overall architecture (network-style 3D block diagram). Note that FreeReg is a \emph  {geometric/optimization} pipeline rather than a learned neural network; the diagram uses a network-style layered-block rendering for clarity, and the correspondence front end is interface-isomorphic with (and swappable to) a learned network (e.g., FoundationPose). A 3D model (CT/CAD mesh) and an image/video stream (RGB-D or monocular) are fused by a multi-source correspondence engine (texture SIFT, geometric FPFH, render-and-compare templates) with contour-gated arbitration to a rigid pose $(\mathbf  {R},\mathbf  {t})\in SE(3)$; a manifold SE(3) Kalman filter with innovation gating temporally regularizes the pose; an observability-guided RTW estimator recovers deformation within the spectral observable subspace $\mathbf  {V}_{r}$; and a co-anchored 3D Gaussian Splatting renderer produces the MR composite, whose photometric residual feeds back (dashed) as an online, label-free validation signal. A scene graph resolves multi-model occlusion.}}{4}{figure.2}\protected@file@percent }
+\newlabel{fig:pipeline}{{2}{4}{FreeReg overall architecture (network-style 3D block diagram). Note that FreeReg is a \emph {geometric/optimization} pipeline rather than a learned neural network; the diagram uses a network-style layered-block rendering for clarity, and the correspondence front end is interface-isomorphic with (and swappable to) a learned network (e.g., FoundationPose). A 3D model (CT/CAD mesh) and an image/video stream (RGB-D or monocular) are fused by a multi-source correspondence engine (texture SIFT, geometric FPFH, render-and-compare templates) with contour-gated arbitration to a rigid pose $(\mathbf {R},\mathbf {t})\in SE(3)$; a manifold SE(3) Kalman filter with innovation gating temporally regularizes the pose; an observability-guided RTW estimator recovers deformation within the spectral observable subspace $\mathbf {V}_{r}$; and a co-anchored 3D Gaussian Splatting renderer produces the MR composite, whose photometric residual feeds back (dashed) as an online, label-free validation signal. A scene graph resolves multi-model occlusion}{figure.2}{}}
+\newlabel{eq:rtwobj}{{3}{4}{Observability-guided and hierarchical RTW}{equation.3}{}}
+\newlabel{eq:jacobian}{{4}{4}{Observability-guided and hierarchical RTW}{equation.4}{}}
+\newlabel{thm:rank}{{1}{4}{Rank deficiency of single-view registration}{equation.4}{}}
+\@writefile{toc}{\contentsline {subsection}{\numberline {IV-C}Manifold temporal consistency with innovation gating}{4}{subsection.4.3}\protected@file@percent }
+\newlabel{sec:kalman}{{IV-C}{4}{Manifold temporal consistency with innovation gating}{subsection.4.3}{}}
+\citation{kerbl20233dgs}
+\citation{allan2021scared}
+\citation{hodan2018bop}
+\citation{hodan2018bop}
+\newlabel{eq:kalmanupdate}{{5}{5}{Manifold temporal consistency with innovation gating}{equation.5}{}}
+\@writefile{toc}{\contentsline {subsection}{\numberline {IV-D}Co-anchored registration, rendering, and scene graph}{5}{subsection.4.4}\protected@file@percent }
+\newlabel{sec:render}{{IV-D}{5}{Co-anchored registration, rendering, and scene graph}{subsection.4.4}{}}
+\@writefile{toc}{\contentsline {section}{\numberline {V}Experiments and Results}{5}{section.5}\protected@file@percent }
+\newlabel{sec:exp}{{V}{5}{Experiments and Results}{section.5}{}}
+\citation{allan2021scared}
+\citation{hodan2018bop}
+\citation{hodan2018bop}
+\@writefile{lot}{\contentsline {table}{\numberline {III}{\ignorespaces Evaluation resources and their roles.}}{6}{table.3}\protected@file@percent }
+\newlabel{tab:datasets}{{III}{6}{Evaluation resources and their roles}{table.3}{}}
+\@writefile{lot}{\contentsline {table}{\numberline {IV}{\ignorespaces Controlled-synthetic validation of geometric primitives.}}{6}{table.4}\protected@file@percent }
+\newlabel{tab:unit}{{IV}{6}{Controlled-synthetic validation of geometric primitives}{table.4}{}}
+\@writefile{toc}{\contentsline {subsection}{\numberline {V-A}Implementation, runtime, and primitive validation}{6}{subsection.5.1}\protected@file@percent }
+\@writefile{lot}{\contentsline {table}{\numberline {V}{\ignorespaces Per-frame runtime breakdown.}}{6}{table.5}\protected@file@percent }
+\newlabel{tab:runtime}{{V}{6}{Per-frame runtime breakdown}{table.5}{}}
+\@writefile{lot}{\contentsline {table}{\numberline {VI}{\ignorespaces Single-frame registration on BOP Linemod (125 samples).}}{6}{table.6}\protected@file@percent }
+\newlabel{tab:bop}{{VI}{6}{Single-frame registration on BOP Linemod (125 samples)}{table.6}{}}
+\@writefile{toc}{\contentsline {subsection}{\numberline {V-B}Rigid registration on BOP}{6}{subsection.5.2}\protected@file@percent }
+\@writefile{lot}{\contentsline {table}{\numberline {VII}{\ignorespaces Correspondence-source ablation (BOP Linemod).}}{7}{table.7}\protected@file@percent }
+\newlabel{tab:ablation}{{VII}{7}{Correspondence-source ablation (BOP Linemod)}{table.7}{}}
+\@writefile{lot}{\contentsline {table}{\numberline {VIII}{\ignorespaces Hybrid cascade on BOP Linemod (300 frames, learned front-end + ICP).}}{7}{table.8}\protected@file@percent }
+\newlabel{tab:cascade}{{VIII}{7}{Hybrid cascade on BOP Linemod (300 frames, learned front-end + ICP)}{table.8}{}}
+\@writefile{lot}{\contentsline {table}{\numberline {IX}{\ignorespaces Video temporal consistency (jitter deviation, px).}}{7}{table.9}\protected@file@percent }
+\newlabel{tab:temporal}{{IX}{7}{Video temporal consistency (jitter deviation, px)}{table.9}{}}
+\@writefile{toc}{\contentsline {subsection}{\numberline {V-C}Temporal consistency}{7}{subsection.5.3}\protected@file@percent }
+\@writefile{toc}{\contentsline {subsection}{\numberline {V-D}Non-rigid registration and observability}{7}{subsection.5.4}\protected@file@percent }
+\@writefile{toc}{\contentsline {subsection}{\numberline {V-E}Clinical registration (12 cases, 270 frames)}{7}{subsection.5.5}\protected@file@percent }
+\@writefile{lot}{\contentsline {table}{\numberline {X}{\ignorespaces Non-rigid registration and observability.}}{7}{table.10}\protected@file@percent }
+\newlabel{tab:nonrigid}{{X}{7}{Non-rigid registration and observability}{table.10}{}}
+\@writefile{lof}{\contentsline {figure}{\numberline {3}{\ignorespaces Non-rigid deformation recovery on a tubular airway/colon analog, visualized as projected surface points. Rows increase the bend amplitude (20/35/50\,mm). The rigid baseline (blue) remains straight; the ground truth (orange) bends into an arc; RTW (green) recovers that bend within the observable subspace. At 35 and 50\,mm, RTW reaches 6.05 and 8.28\,mm recovery error, respectively, versus 6.20 and 8.57\,mm for the rigid baseline.}}{7}{figure.3}\protected@file@percent }
+\newlabel{fig:dent}{{3}{7}{Non-rigid deformation recovery on a tubular airway/colon analog, visualized as projected surface points. Rows increase the bend amplitude (20/35/50\,mm). The rigid baseline (blue) remains straight; the ground truth (orange) bends into an arc; RTW (green) recovers that bend within the observable subspace. At 35 and 50\,mm, RTW reaches 6.05 and 8.28\,mm recovery error, respectively, versus 6.20 and 8.57\,mm for the rigid baseline}{figure.3}{}}
+\@writefile{lot}{\contentsline {table}{\numberline {XI}{\ignorespaces Clinical CT-to-bronchoscopy cohort (12 cases, 270 frames).}}{7}{table.11}\protected@file@percent }
+\newlabel{tab:clinical}{{XI}{7}{Clinical CT-to-bronchoscopy cohort (12 cases, 270 frames)}{table.11}{}}
+\@writefile{toc}{\contentsline {subsection}{\numberline {V-F}Rendering, SOTA comparison, and qualitative results}{7}{subsection.5.6}\protected@file@percent }
+\@writefile{lot}{\contentsline {table}{\numberline {XII}{\ignorespaces Per-case clinical TRE (synthetic fly-through from real CT).}}{8}{table.12}\protected@file@percent }
+\newlabel{tab:percase}{{XII}{8}{Per-case clinical TRE (synthetic fly-through from real CT)}{table.12}{}}
+\@writefile{lof}{\contentsline {figure}{\numberline {4}{\ignorespaces Registered airway model on the CT cross-sections (axial / coronal / sagittal). The registered 3D airway model (orange points) and its centerline (red) are overlaid on the three orthogonal CT slices, with the airway lumen shown in blue (light fill, dark outline), confirming model-to-CT agreement in the image volume.}}{8}{figure.4}\protected@file@percent }
+\newlabel{fig:ct_overlay}{{4}{8}{Registered airway model on the CT cross-sections (axial / coronal / sagittal). The registered 3D airway model (orange points) and its centerline (red) are overlaid on the three orthogonal CT slices, with the airway lumen shown in blue (light fill, dark outline), confirming model-to-CT agreement in the image volume}{figure.4}{}}
+\@writefile{lot}{\contentsline {table}{\numberline {XIII}{\ignorespaces Rendering and multi-model evaluation.}}{8}{table.13}\protected@file@percent }
+\newlabel{tab:render}{{XIII}{8}{Rendering and multi-model evaluation}{table.13}{}}
+\@writefile{lof}{\contentsline {figure}{\numberline {5}{\ignorespaces Photometric residual as an online validation signal on the airway (synthetic fly-through render from the real CT model). Left: the observed frame. Middle: residual heatmap of a hypothesized mis-registered pose (hot = large photometric error). Right: residual after FreeReg refinement, where the heatmap cools toward the noise floor as the pose is corrected. The render residual localizes registration error without labels (a 1\,mm pose offset drops silhouette IoU to 0.62 and a 2\,mm offset to 0.44, while refinement halves the photometric residual from 0.325 to 0.163), motivating its use as the co-anchored validation signal (Section~\ref {sec:render}).}}{8}{figure.5}\protected@file@percent }
+\newlabel{fig:render}{{5}{8}{Photometric residual as an online validation signal on the airway (synthetic fly-through render from the real CT model). Left: the observed frame. Middle: residual heatmap of a hypothesized mis-registered pose (hot = large photometric error). Right: residual after FreeReg refinement, where the heatmap cools toward the noise floor as the pose is corrected. The render residual localizes registration error without labels (a 1\,mm pose offset drops silhouette IoU to 0.62 and a 2\,mm offset to 0.44, while refinement halves the photometric residual from 0.325 to 0.163), motivating its use as the co-anchored validation signal (Section~\ref {sec:render})}{figure.5}{}}
+\@writefile{lof}{\contentsline {figure}{\numberline {6}{\ignorespaces Scene-graph multi-model occlusion compositing across two depth orderings. Three models (duck, ape, can) are placed front-to-back in different permutations (rows). For each, the real background (left), the ground-truth composite (middle), and our estimated composite (right) show the nearer model correctly hiding the farther one; the estimated composite reproduces the ground-truth occlusion ordering with 100\% occlusion-edge accuracy, since the depth-aware scene graph composites each model in the correct layer regardless of ordering.}}{8}{figure.6}\protected@file@percent }
+\newlabel{fig:scene}{{6}{8}{Scene-graph multi-model occlusion compositing across two depth orderings. Three models (duck, ape, can) are placed front-to-back in different permutations (rows). For each, the real background (left), the ground-truth composite (middle), and our estimated composite (right) show the nearer model correctly hiding the farther one; the estimated composite reproduces the ground-truth occlusion ordering with 100\% occlusion-edge accuracy, since the depth-aware scene graph composites each model in the correct layer regardless of ordering}{figure.6}{}}
+\@writefile{lot}{\contentsline {table}{\numberline {XIV}{\ignorespaces Robustness and degradability of the free-coordinate pipeline.}}{8}{table.14}\protected@file@percent }
+\newlabel{tab:robust}{{XIV}{8}{Robustness and degradability of the free-coordinate pipeline}{table.14}{}}
+\@writefile{lot}{\contentsline {table}{\numberline {XV}{\ignorespaces SOTA on the clinical fly-through protocol (identical frames).}}{8}{table.15}\protected@file@percent }
+\newlabel{tab:sota}{{XV}{8}{SOTA on the clinical fly-through protocol (identical frames)}{table.15}{}}
+\bibstyle{IEEEtran}
+\bibdata{references}
+\@writefile{toc}{\contentsline {section}{\numberline {VI}Discussion}{9}{section.6}\protected@file@percent }
+\newlabel{sec:disc}{{VI}{9}{Discussion}{section.6}{}}
+\@writefile{toc}{\contentsline {section}{\numberline {VII}Conclusion}{9}{section.7}\protected@file@percent }
+\newlabel{sec:conclusion}{{VII}{9}{Conclusion}{section.7}{}}
+\@writefile{lof}{\contentsline {figure}{\numberline {7}{\ignorespaces Registration and AR fusion on BOP Linemod across seven objects and scenes. Each panel shows the live RGB frame with the registered model's projected silhouette (green contour and fill) and coordinate axes overlaid, aligning with the true object under viewpoint change and occlusion (Table~\ref {tab:bop}).}}{10}{figure.7}\protected@file@percent }
+\newlabel{fig:gal_ar}{{7}{10}{Registration and AR fusion on BOP Linemod across seven objects and scenes. Each panel shows the live RGB frame with the registered model's projected silhouette (green contour and fill) and coordinate axes overlaid, aligning with the true object under viewpoint change and occlusion (Table~\ref {tab:bop})}{figure.7}{}}
+\@writefile{lof}{\contentsline {figure}{\numberline {8}{\ignorespaces CT-to-bronchoscopy registration on the clinical cohort. Each panel is a pure endoscopic Live-View crop with FreeReg centerline correspondence (green lumen skeleton; red projected CT centerline; yellow bifurcations), spanning diverse airway depths and bifurcations where depth-based ICP is unreliable, at 4.23\,mm mean TRE (Table~\ref {tab:clinical}).}}{10}{figure.8}\protected@file@percent }
+\newlabel{fig:gal_clin}{{8}{10}{CT-to-bronchoscopy registration on the clinical cohort. Each panel is a pure endoscopic Live-View crop with FreeReg centerline correspondence (green lumen skeleton; red projected CT centerline; yellow bifurcations), spanning diverse airway depths and bifurcations where depth-based ICP is unreliable, at 4.23\,mm mean TRE (Table~\ref {tab:clinical})}{figure.8}{}}
+\@writefile{lof}{\contentsline {figure}{\numberline {9}{\ignorespaces AR fusion on SCARED real endoscopic video. Across viewpoints the registered virtual model (green) remains anchored to the tissue under partial occlusion, showing temporal-coherent, depth-aware fusion from the co-anchored renderer.}}{10}{figure.9}\protected@file@percent }
+\newlabel{fig:gal_scared}{{9}{10}{AR fusion on SCARED real endoscopic video. Across viewpoints the registered virtual model (green) remains anchored to the tissue under partial occlusion, showing temporal-coherent, depth-aware fusion from the co-anchored renderer}{figure.9}{}}
+\gdef \@abspage@last{10}

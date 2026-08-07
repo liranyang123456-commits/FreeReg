@@ -1,0 +1,1448 @@
+This is pdfTeX, Version 3.141592653-2.6-1.40.27 (MiKTeX 25.4) (preloaded format=pdflatex 2026.1.12)  8 AUG 2026 01:59
+entering extended mode
+ restricted \write18 enabled.
+ %&-line parsing enabled.
+**./freereg_tbme_full.tex
+(freereg_tbme_full.tex
+LaTeX2e <2025-11-01>
+L3 programming layer <2025-11-06>
+(ieeecolor2.cls
+
+LaTeX Warning: You have requested document class `ieeecolor2',
+               but the document class provides `IEEEtran'.
+
+Document Class: IEEEtran 2002/11/18 revision V1.6b by Michael Shell
+-- See the "IEEEtran_HOWTO" manual for usage information.
+-- The source comments contain changelog notes.
+(D:\Ctex\MiKTeX\tex/latex/graphics\color.sty
+Package: color 2025/01/14 v1.3e Standard LaTeX Color (DPC)
+
+(D:\Ctex\MiKTeX\tex/latex/graphics-cfg\color.cfg
+File: color.cfg 2016/01/02 v1.6 sample color configuration
+)
+Package color Info: Driver file: pdftex.def on input line 149.
+
+(D:\Ctex\MiKTeX\tex/latex/graphics-def\pdftex.def
+File: pdftex.def 2025/09/29 v1.2d Graphics/color driver for pdftex
+)
+(D:\Ctex\MiKTeX\tex/latex/graphics\mathcolor.ltx))
+\@draftversionrule=\dimen148
+\@IEEEtrantmpdimenA=\dimen149
+\@IEEEtrantmpdimenB=\dimen150
+\@IEEEtrantmpcountA=\count275
+\@IEEEtrantmpcountB=\count276
+\@IEEEtrantmptoksA=\toks17
+LaTeX Font Info:    Trying to load font information for OT1+ptm on input line 8
+34.
+
+(D:\Ctex\MiKTeX\tex/latex/psnfss\ot1ptm.fd
+File: ot1ptm.fd 2001/06/04 font definitions for OT1/ptm.
+)
+\@IEEEnormalsizefontbaselineskip=\skip49
+
+-- This is a 9 point document.
+\normalsizebaselineskip=\skip50
+\normaljot=\skip51
+LaTeX Font Info:    Font shape `OT1/ptm/bx/n' in size <5> not available
+(Font)              Font shape `OT1/ptm/b/n' tried instead on input line 1180.
+LaTeX Font Info:    Font shape `OT1/ptm/bx/it' in size <5> not available
+(Font)              Font shape `OT1/ptm/b/it' tried instead on input line 1180.
+
+LaTeX Font Info:    Font shape `OT1/ptm/bx/n' in size <7> not available
+(Font)              Font shape `OT1/ptm/b/n' tried instead on input line 1180.
+LaTeX Font Info:    Font shape `OT1/ptm/bx/it' in size <7> not available
+(Font)              Font shape `OT1/ptm/b/it' tried instead on input line 1180.
+
+LaTeX Font Info:    Font shape `OT1/ptm/bx/n' in size <8> not available
+(Font)              Font shape `OT1/ptm/b/n' tried instead on input line 1180.
+LaTeX Font Info:    Font shape `OT1/ptm/bx/it' in size <8> not available
+(Font)              Font shape `OT1/ptm/b/it' tried instead on input line 1180.
+
+LaTeX Font Info:    Font shape `OT1/ptm/bx/n' in size <8.5> not available
+(Font)              Font shape `OT1/ptm/b/n' tried instead on input line 1180.
+LaTeX Font Info:    Font shape `OT1/ptm/bx/it' in size <8.5> not available
+(Font)              Font shape `OT1/ptm/b/it' tried instead on input line 1180.
+
+LaTeX Font Info:    Font shape `OT1/ptm/bx/n' in size <9> not available
+(Font)              Font shape `OT1/ptm/b/n' tried instead on input line 1180.
+LaTeX Font Info:    Font shape `OT1/ptm/bx/it' in size <9> not available
+(Font)              Font shape `OT1/ptm/b/it' tried instead on input line 1180.
+
+LaTeX Font Info:    Font shape `OT1/ptm/bx/n' in size <10> not available
+(Font)              Font shape `OT1/ptm/b/n' tried instead on input line 1180.
+LaTeX Font Info:    Font shape `OT1/ptm/bx/it' in size <10> not available
+(Font)              Font shape `OT1/ptm/b/it' tried instead on input line 1180.
+
+LaTeX Font Info:    Font shape `OT1/ptm/bx/n' in size <14> not available
+(Font)              Font shape `OT1/ptm/b/n' tried instead on input line 1180.
+LaTeX Font Info:    Font shape `OT1/ptm/bx/it' in size <14> not available
+(Font)              Font shape `OT1/ptm/b/it' tried instead on input line 1180.
+
+LaTeX Font Info:    Font shape `OT1/ptm/bx/n' in size <17> not available
+(Font)              Font shape `OT1/ptm/b/n' tried instead on input line 1180.
+LaTeX Font Info:    Font shape `OT1/ptm/bx/it' in size <17> not available
+(Font)              Font shape `OT1/ptm/b/it' tried instead on input line 1180.
+
+LaTeX Font Info:    Font shape `OT1/ptm/bx/n' in size <20> not available
+(Font)              Font shape `OT1/ptm/b/n' tried instead on input line 1180.
+LaTeX Font Info:    Font shape `OT1/ptm/bx/it' in size <20> not available
+(Font)              Font shape `OT1/ptm/b/it' tried instead on input line 1180.
+
+\IEEEilabelindentA=\dimen151
+\IEEEilabelindentB=\dimen152
+\IEEEilabelindent=\dimen153
+\IEEEelabelindent=\dimen154
+\IEEEdlabelindent=\dimen155
+\labelindent=\dimen156
+\IEEEiednormlabelsep=\dimen157
+\IEEEiedmathlabelsep=\dimen158
+\IEEEiedtopsep=\skip52
+\c@section=\count277
+\c@subsection=\count278
+\c@subsubsection=\count279
+\c@paragraph=\count280
+\c@IEEEsubequation=\count281
+\abovecaptionskip=\skip53
+\belowcaptionskip=\skip54
+\figbox=\box53
+\c@figure=\count282
+\c@query=\count283
+\c@qry=\count284
+\c@nquery=\count285
+\c@tquery=\count286
+\c@equery=\count287
+\c@eqry=\count288
+\c@edquery=\count289
+\c@etquery=\count290
+\c@table=\count291
+\@IEEEeqnnumcols=\count292
+\@IEEEeqncolcnt=\count293
+\firstpagerule=\skip55
+\logowidth=\skip56
+\@IEEEtmpitemindent=\dimen159
+\c@biography=\count294
+\c@edbiography=\count295
+LaTeX Info: Redefining \sf on input line 4872.
+\@IEEEtranrubishbin=\box54
+) (generic.sty) (D:\Ctex\MiKTeX\tex/latex/cite\cite.sty
+LaTeX Info: Redefining \cite on input line 302.
+LaTeX Info: Redefining \nocite on input line 332.
+Package: cite 2015/02/27  v 5.5
+)
+(D:\Ctex\MiKTeX\tex/latex/amsmath\amsmath.sty
+Package: amsmath 2025/07/09 v2.17z AMS math features
+\@mathmargin=\skip57
+
+For additional information on amsmath, use the `?' option.
+(D:\Ctex\MiKTeX\tex/latex/amsmath\amstext.sty
+Package: amstext 2024/11/17 v2.01 AMS text
+
+(D:\Ctex\MiKTeX\tex/latex/amsmath\amsgen.sty
+File: amsgen.sty 1999/11/30 v2.0 generic functions
+\@emptytoks=\toks18
+\ex@=\dimen160
+))
+(D:\Ctex\MiKTeX\tex/latex/amsmath\amsbsy.sty
+Package: amsbsy 1999/11/29 v1.2d Bold Symbols
+\pmbraise@=\dimen161
+)
+(D:\Ctex\MiKTeX\tex/latex/amsmath\amsopn.sty
+Package: amsopn 2022/04/08 v2.04 operator names
+)
+\inf@bad=\count296
+LaTeX Info: Redefining \frac on input line 233.
+\uproot@=\count297
+\leftroot@=\count298
+LaTeX Info: Redefining \overline on input line 398.
+LaTeX Info: Redefining \colon on input line 409.
+\classnum@=\count299
+\DOTSCASE@=\count300
+LaTeX Info: Redefining \ldots on input line 495.
+LaTeX Info: Redefining \dots on input line 498.
+LaTeX Info: Redefining \cdots on input line 619.
+\Mathstrutbox@=\box55
+\strutbox@=\box56
+LaTeX Info: Redefining \big on input line 721.
+LaTeX Info: Redefining \Big on input line 722.
+LaTeX Info: Redefining \bigg on input line 723.
+LaTeX Info: Redefining \Bigg on input line 724.
+\big@size=\dimen162
+LaTeX Font Info:    Redeclaring font encoding OML on input line 742.
+LaTeX Font Info:    Redeclaring font encoding OMS on input line 743.
+\macc@depth=\count301
+LaTeX Info: Redefining \bmod on input line 904.
+LaTeX Info: Redefining \pmod on input line 909.
+LaTeX Info: Redefining \smash on input line 939.
+LaTeX Info: Redefining \relbar on input line 969.
+LaTeX Info: Redefining \Relbar on input line 970.
+\c@MaxMatrixCols=\count302
+\dotsspace@=\muskip17
+\c@parentequation=\count303
+\dspbrk@lvl=\count304
+\tag@help=\toks19
+\row@=\count305
+\column@=\count306
+\maxfields@=\count307
+\andhelp@=\toks20
+\eqnshift@=\dimen163
+\alignsep@=\dimen164
+\tagshift@=\dimen165
+\tagwidth@=\dimen166
+\totwidth@=\dimen167
+\lineht@=\dimen168
+\@envbody=\toks21
+\multlinegap=\skip58
+\multlinetaggap=\skip59
+\mathdisplay@stack=\toks22
+LaTeX Info: Redefining \[ on input line 2950.
+LaTeX Info: Redefining \] on input line 2951.
+)
+(D:\Ctex\MiKTeX\tex/latex/amsfonts\amssymb.sty
+Package: amssymb 2013/01/14 v3.01 AMS font symbols
+
+(D:\Ctex\MiKTeX\tex/latex/amsfonts\amsfonts.sty
+Package: amsfonts 2013/01/14 v3.01 Basic AMSFonts support
+\symAMSa=\mathgroup4
+\symAMSb=\mathgroup5
+LaTeX Font Info:    Redeclaring math symbol \hbar on input line 98.
+LaTeX Font Info:    Overwriting math alphabet `\mathfrak' in version `bold'
+(Font)                  U/euf/m/n --> U/euf/b/n on input line 106.
+))
+(D:\Ctex\MiKTeX\tex/latex/graphics\graphicx.sty
+Package: graphicx 2024/12/31 v1.2e Enhanced LaTeX Graphics (DPC,SPQR)
+
+(D:\Ctex\MiKTeX\tex/latex/graphics\keyval.sty
+Package: keyval 2022/05/29 v1.15 key=value parser (DPC)
+\KV@toks@=\toks23
+)
+(D:\Ctex\MiKTeX\tex/latex/graphics\graphics.sty
+Package: graphics 2024/08/06 v1.4g Standard LaTeX Graphics (DPC,SPQR)
+
+(D:\Ctex\MiKTeX\tex/latex/graphics\trig.sty
+Package: trig 2023/12/02 v1.11 sin cos tan (DPC)
+)
+(D:\Ctex\MiKTeX\tex/latex/graphics-cfg\graphics.cfg
+File: graphics.cfg 2016/06/04 v1.11 sample graphics configuration
+)
+Package graphics Info: Driver file: pdftex.def on input line 106.
+)
+\Gin@req@height=\dimen169
+\Gin@req@width=\dimen170
+)
+(D:\Ctex\MiKTeX\tex/latex/base\textcomp.sty
+Package: textcomp 2024/04/24 v2.1b Standard LaTeX package
+)
+(D:\Ctex\MiKTeX\tex/latex/gensymb\gensymb.sty
+Package: gensymb 2022/10/17 v1.0.2 (KJH)
+)
+(D:\Ctex\MiKTeX\tex/latex/booktabs\booktabs.sty
+Package: booktabs 2020/01/12 v1.61803398 Publication quality tables
+\heavyrulewidth=\dimen171
+\lightrulewidth=\dimen172
+\cmidrulewidth=\dimen173
+\belowrulesep=\dimen174
+\belowbottomsep=\dimen175
+\aboverulesep=\dimen176
+\abovetopsep=\dimen177
+\cmidrulesep=\dimen178
+\cmidrulekern=\dimen179
+\defaultaddspace=\dimen180
+\@cmidla=\count308
+\@cmidlb=\count309
+\@aboverulesep=\dimen181
+\@belowrulesep=\dimen182
+\@thisruleclass=\count310
+\@lastruleclass=\count311
+\@thisrulewidth=\dimen183
+)
+(D:\Ctex\MiKTeX\tex/latex/multirow\multirow.sty
+Package: multirow 2024/11/12 v2.9 Span multiple rows of a table
+\multirow@colwidth=\skip60
+\multirow@cntb=\count312
+\multirow@dima=\skip61
+\bigstrutjot=\dimen184
+)
+(D:\Ctex\MiKTeX\tex/latex/url\url.sty
+\Urlmuskip=\muskip18
+Package: url 2013/09/16  ver 3.4  Verb mode for urls, etc.
+)
+(D:\Ctex\MiKTeX\tex/latex/pgf/frontendlayer\tikz.sty
+(D:\Ctex\MiKTeX\tex/latex/pgf/basiclayer\pgf.sty
+(D:\Ctex\MiKTeX\tex/latex/pgf/utilities\pgfrcs.sty
+(D:\Ctex\MiKTeX\tex/generic/pgf/utilities\pgfutil-common.tex
+\pgfutil@everybye=\toks24
+\pgfutil@tempdima=\dimen185
+\pgfutil@tempdimb=\dimen186
+)
+(D:\Ctex\MiKTeX\tex/generic/pgf/utilities\pgfutil-latex.def
+\pgfutil@abb=\box57
+)
+(D:\Ctex\MiKTeX\tex/generic/pgf/utilities\pgfrcs.code.tex
+(D:\Ctex\MiKTeX\tex/generic/pgf\pgf.revision.tex)
+Package: pgfrcs 2025-08-29 v3.1.11a (3.1.11a)
+))
+Package: pgf 2025-08-29 v3.1.11a (3.1.11a)
+
+(D:\Ctex\MiKTeX\tex/latex/pgf/basiclayer\pgfcore.sty
+(D:\Ctex\MiKTeX\tex/latex/pgf/systemlayer\pgfsys.sty
+(D:\Ctex\MiKTeX\tex/generic/pgf/systemlayer\pgfsys.code.tex
+Package: pgfsys 2025-08-29 v3.1.11a (3.1.11a)
+
+(D:\Ctex\MiKTeX\tex/generic/pgf/utilities\pgfkeys.code.tex
+\pgfkeys@pathtoks=\toks25
+\pgfkeys@temptoks=\toks26
+
+(D:\Ctex\MiKTeX\tex/generic/pgf/utilities\pgfkeyslibraryfiltered.code.tex
+\pgfkeys@tmptoks=\toks27
+))
+\pgf@x=\dimen187
+\pgf@y=\dimen188
+\pgf@xa=\dimen189
+\pgf@ya=\dimen190
+\pgf@xb=\dimen191
+\pgf@yb=\dimen192
+\pgf@xc=\dimen193
+\pgf@yc=\dimen194
+\pgf@xd=\dimen195
+\pgf@yd=\dimen196
+\w@pgf@writea=\write3
+\r@pgf@reada=\read2
+\c@pgf@counta=\count313
+\c@pgf@countb=\count314
+\c@pgf@countc=\count315
+\c@pgf@countd=\count316
+\t@pgf@toka=\toks28
+\t@pgf@tokb=\toks29
+\t@pgf@tokc=\toks30
+\pgf@sys@id@count=\count317
+
+(D:\Ctex\MiKTeX\tex/generic/pgf/systemlayer\pgf.cfg
+File: pgf.cfg 2025-08-29 v3.1.11a (3.1.11a)
+)
+Driver file for pgf: pgfsys-pdftex.def
+
+(D:\Ctex\MiKTeX\tex/generic/pgf/systemlayer\pgfsys-pdftex.def
+File: pgfsys-pdftex.def 2025-08-29 v3.1.11a (3.1.11a)
+
+(D:\Ctex\MiKTeX\tex/generic/pgf/systemlayer\pgfsys-common-pdf.def
+File: pgfsys-common-pdf.def 2025-08-29 v3.1.11a (3.1.11a)
+)))
+(D:\Ctex\MiKTeX\tex/generic/pgf/systemlayer\pgfsyssoftpath.code.tex
+File: pgfsyssoftpath.code.tex 2025-08-29 v3.1.11a (3.1.11a)
+\pgfsyssoftpath@smallbuffer@items=\count318
+\pgfsyssoftpath@bigbuffer@items=\count319
+)
+(D:\Ctex\MiKTeX\tex/generic/pgf/systemlayer\pgfsysprotocol.code.tex
+File: pgfsysprotocol.code.tex 2025-08-29 v3.1.11a (3.1.11a)
+))
+(D:\Ctex\MiKTeX\tex/latex/xcolor\xcolor.sty
+Package: xcolor 2024/09/29 v3.02 LaTeX color extensions (UK)
+
+(D:\Ctex\MiKTeX\tex/latex/graphics-cfg\color.cfg
+File: color.cfg 2016/01/02 v1.6 sample color configuration
+)
+Package xcolor Info: Driver file: pdftex.def on input line 274.
+LaTeX Info: Redefining \color on input line 762.
+
+(D:\Ctex\MiKTeX\tex/latex/graphics\mathcolor.ltx)
+Package xcolor Info: Model `cmy' substituted by `cmy0' on input line 1349.
+Package xcolor Info: Model `hsb' substituted by `rgb' on input line 1353.
+Package xcolor Info: Model `RGB' extended on input line 1365.
+Package xcolor Info: Model `HTML' substituted by `rgb' on input line 1367.
+Package xcolor Info: Model `Hsb' substituted by `hsb' on input line 1368.
+Package xcolor Info: Model `tHsb' substituted by `hsb' on input line 1369.
+Package xcolor Info: Model `HSB' substituted by `hsb' on input line 1370.
+Package xcolor Info: Model `Gray' substituted by `gray' on input line 1371.
+Package xcolor Info: Model `wave' substituted by `hsb' on input line 1372.
+)
+(D:\Ctex\MiKTeX\tex/generic/pgf/basiclayer\pgfcore.code.tex
+Package: pgfcore 2025-08-29 v3.1.11a (3.1.11a)
+
+(D:\Ctex\MiKTeX\tex/generic/pgf/math\pgfmath.code.tex
+(D:\Ctex\MiKTeX\tex/generic/pgf/math\pgfmathutil.code.tex)
+(D:\Ctex\MiKTeX\tex/generic/pgf/math\pgfmathparser.code.tex
+\pgfmath@dimen=\dimen197
+\pgfmath@count=\count320
+\pgfmath@box=\box58
+\pgfmath@toks=\toks31
+\pgfmath@stack@operand=\toks32
+\pgfmath@stack@operation=\toks33
+)
+(D:\Ctex\MiKTeX\tex/generic/pgf/math\pgfmathfunctions.code.tex)
+(D:\Ctex\MiKTeX\tex/generic/pgf/math\pgfmathfunctions.basic.code.tex)
+(D:\Ctex\MiKTeX\tex/generic/pgf/math\pgfmathfunctions.trigonometric.code.tex)
+(D:\Ctex\MiKTeX\tex/generic/pgf/math\pgfmathfunctions.random.code.tex)
+(D:\Ctex\MiKTeX\tex/generic/pgf/math\pgfmathfunctions.comparison.code.tex)
+(D:\Ctex\MiKTeX\tex/generic/pgf/math\pgfmathfunctions.base.code.tex)
+(D:\Ctex\MiKTeX\tex/generic/pgf/math\pgfmathfunctions.round.code.tex)
+(D:\Ctex\MiKTeX\tex/generic/pgf/math\pgfmathfunctions.misc.code.tex)
+(D:\Ctex\MiKTeX\tex/generic/pgf/math\pgfmathfunctions.integerarithmetics.code.t
+ex) (D:\Ctex\MiKTeX\tex/generic/pgf/math\pgfmathcalc.code.tex)
+(D:\Ctex\MiKTeX\tex/generic/pgf/math\pgfmathfloat.code.tex
+\c@pgfmathroundto@lastzeros=\count321
+))
+(D:\Ctex\MiKTeX\tex/generic/pgf/math\pgfint.code.tex)
+(D:\Ctex\MiKTeX\tex/generic/pgf/basiclayer\pgfcorepoints.code.tex
+File: pgfcorepoints.code.tex 2025-08-29 v3.1.11a (3.1.11a)
+\pgf@picminx=\dimen198
+\pgf@picmaxx=\dimen199
+\pgf@picminy=\dimen256
+\pgf@picmaxy=\dimen257
+\pgf@pathminx=\dimen258
+\pgf@pathmaxx=\dimen259
+\pgf@pathminy=\dimen260
+\pgf@pathmaxy=\dimen261
+\pgf@xx=\dimen262
+\pgf@xy=\dimen263
+\pgf@yx=\dimen264
+\pgf@yy=\dimen265
+\pgf@zx=\dimen266
+\pgf@zy=\dimen267
+)
+(D:\Ctex\MiKTeX\tex/generic/pgf/basiclayer\pgfcorepathconstruct.code.tex
+File: pgfcorepathconstruct.code.tex 2025-08-29 v3.1.11a (3.1.11a)
+\pgf@path@lastx=\dimen268
+\pgf@path@lasty=\dimen269
+)
+(D:\Ctex\MiKTeX\tex/generic/pgf/basiclayer\pgfcorepathusage.code.tex
+File: pgfcorepathusage.code.tex 2025-08-29 v3.1.11a (3.1.11a)
+\pgf@shorten@end@additional=\dimen270
+\pgf@shorten@start@additional=\dimen271
+)
+(D:\Ctex\MiKTeX\tex/generic/pgf/basiclayer\pgfcorescopes.code.tex
+File: pgfcorescopes.code.tex 2025-08-29 v3.1.11a (3.1.11a)
+\pgfpic=\box59
+\pgf@hbox=\box60
+\pgf@layerbox@main=\box61
+\pgf@picture@serial@count=\count322
+)
+(D:\Ctex\MiKTeX\tex/generic/pgf/basiclayer\pgfcoregraphicstate.code.tex
+File: pgfcoregraphicstate.code.tex 2025-08-29 v3.1.11a (3.1.11a)
+\pgflinewidth=\dimen272
+)
+(D:\Ctex\MiKTeX\tex/generic/pgf/basiclayer\pgfcoretransformations.code.tex
+File: pgfcoretransformations.code.tex 2025-08-29 v3.1.11a (3.1.11a)
+\pgf@pt@x=\dimen273
+\pgf@pt@y=\dimen274
+\pgf@pt@temp=\dimen275
+)
+(D:\Ctex\MiKTeX\tex/generic/pgf/basiclayer\pgfcorequick.code.tex
+File: pgfcorequick.code.tex 2025-08-29 v3.1.11a (3.1.11a)
+)
+(D:\Ctex\MiKTeX\tex/generic/pgf/basiclayer\pgfcoreobjects.code.tex
+File: pgfcoreobjects.code.tex 2025-08-29 v3.1.11a (3.1.11a)
+)
+(D:\Ctex\MiKTeX\tex/generic/pgf/basiclayer\pgfcorepathprocessing.code.tex
+File: pgfcorepathprocessing.code.tex 2025-08-29 v3.1.11a (3.1.11a)
+)
+(D:\Ctex\MiKTeX\tex/generic/pgf/basiclayer\pgfcorearrows.code.tex
+File: pgfcorearrows.code.tex 2025-08-29 v3.1.11a (3.1.11a)
+\pgfarrowsep=\dimen276
+)
+(D:\Ctex\MiKTeX\tex/generic/pgf/basiclayer\pgfcoreshade.code.tex
+File: pgfcoreshade.code.tex 2025-08-29 v3.1.11a (3.1.11a)
+\pgf@max=\dimen277
+\pgf@sys@shading@range@num=\count323
+\pgf@shadingcount=\count324
+)
+(D:\Ctex\MiKTeX\tex/generic/pgf/basiclayer\pgfcoreimage.code.tex
+File: pgfcoreimage.code.tex 2025-08-29 v3.1.11a (3.1.11a)
+)
+(D:\Ctex\MiKTeX\tex/generic/pgf/basiclayer\pgfcoreexternal.code.tex
+File: pgfcoreexternal.code.tex 2025-08-29 v3.1.11a (3.1.11a)
+\pgfexternal@startupbox=\box62
+)
+(D:\Ctex\MiKTeX\tex/generic/pgf/basiclayer\pgfcorelayers.code.tex
+File: pgfcorelayers.code.tex 2025-08-29 v3.1.11a (3.1.11a)
+)
+(D:\Ctex\MiKTeX\tex/generic/pgf/basiclayer\pgfcoretransparency.code.tex
+File: pgfcoretransparency.code.tex 2025-08-29 v3.1.11a (3.1.11a)
+)
+(D:\Ctex\MiKTeX\tex/generic/pgf/basiclayer\pgfcorepatterns.code.tex
+File: pgfcorepatterns.code.tex 2025-08-29 v3.1.11a (3.1.11a)
+)
+(D:\Ctex\MiKTeX\tex/generic/pgf/basiclayer\pgfcorerdf.code.tex
+File: pgfcorerdf.code.tex 2025-08-29 v3.1.11a (3.1.11a)
+)))
+(D:\Ctex\MiKTeX\tex/generic/pgf/modules\pgfmoduleshapes.code.tex
+File: pgfmoduleshapes.code.tex 2025-08-29 v3.1.11a (3.1.11a)
+\pgfnodeparttextbox=\box63
+)
+(D:\Ctex\MiKTeX\tex/generic/pgf/modules\pgfmoduleplot.code.tex
+File: pgfmoduleplot.code.tex 2025-08-29 v3.1.11a (3.1.11a)
+)
+(D:\Ctex\MiKTeX\tex/latex/pgf/compatibility\pgfcomp-version-0-65.sty
+Package: pgfcomp-version-0-65 2025-08-29 v3.1.11a (3.1.11a)
+\pgf@nodesepstart=\dimen278
+\pgf@nodesepend=\dimen279
+)
+(D:\Ctex\MiKTeX\tex/latex/pgf/compatibility\pgfcomp-version-1-18.sty
+Package: pgfcomp-version-1-18 2025-08-29 v3.1.11a (3.1.11a)
+))
+(D:\Ctex\MiKTeX\tex/latex/pgf/utilities\pgffor.sty
+(D:\Ctex\MiKTeX\tex/latex/pgf/utilities\pgfkeys.sty
+(D:\Ctex\MiKTeX\tex/generic/pgf/utilities\pgfkeys.code.tex))
+(D:\Ctex\MiKTeX\tex/latex/pgf/math\pgfmath.sty
+(D:\Ctex\MiKTeX\tex/generic/pgf/math\pgfmath.code.tex))
+(D:\Ctex\MiKTeX\tex/generic/pgf/utilities\pgffor.code.tex
+Package: pgffor 2025-08-29 v3.1.11a (3.1.11a)
+\pgffor@iter=\dimen280
+\pgffor@skip=\dimen281
+\pgffor@stack=\toks34
+\pgffor@toks=\toks35
+))
+(D:\Ctex\MiKTeX\tex/generic/pgf/frontendlayer/tikz\tikz.code.tex
+Package: tikz 2025-08-29 v3.1.11a (3.1.11a)
+
+(D:\Ctex\MiKTeX\tex/generic/pgf/libraries\pgflibraryplothandlers.code.tex
+File: pgflibraryplothandlers.code.tex 2025-08-29 v3.1.11a (3.1.11a)
+\pgf@plot@mark@count=\count325
+\pgfplotmarksize=\dimen282
+)
+\tikz@lastx=\dimen283
+\tikz@lasty=\dimen284
+\tikz@lastxsaved=\dimen285
+\tikz@lastysaved=\dimen286
+\tikz@lastmovetox=\dimen287
+\tikz@lastmovetoy=\dimen288
+\tikzleveldistance=\dimen289
+\tikzsiblingdistance=\dimen290
+\tikz@figbox=\box64
+\tikz@figbox@bg=\box65
+\tikz@tempbox=\box66
+\tikz@tempbox@bg=\box67
+\tikztreelevel=\count326
+\tikznumberofchildren=\count327
+\tikznumberofcurrentchild=\count328
+\tikz@fig@count=\count329
+
+(D:\Ctex\MiKTeX\tex/generic/pgf/modules\pgfmodulematrix.code.tex
+File: pgfmodulematrix.code.tex 2025-08-29 v3.1.11a (3.1.11a)
+\pgfmatrixcurrentrow=\count330
+\pgfmatrixcurrentcolumn=\count331
+\pgf@matrix@numberofcolumns=\count332
+)
+\tikz@expandcount=\count333
+
+(D:\Ctex\MiKTeX\tex/generic/pgf/frontendlayer/tikz/libraries\tikzlibrarytopaths
+.code.tex
+File: tikzlibrarytopaths.code.tex 2025-08-29 v3.1.11a (3.1.11a)
+)))
+(D:\Ctex\MiKTeX\tex/generic/pgf/frontendlayer/tikz/libraries\tikzlibrarypositio
+ning.code.tex
+File: tikzlibrarypositioning.code.tex 2025-08-29 v3.1.11a (3.1.11a)
+)
+(D:\Ctex\MiKTeX\tex/generic/pgf/libraries\pgflibraryarrows.meta.code.tex
+File: pgflibraryarrows.meta.code.tex 2025-08-29 v3.1.11a (3.1.11a)
+\pgfarrowinset=\dimen291
+\pgfarrowlength=\dimen292
+\pgfarrowwidth=\dimen293
+\pgfarrowlinewidth=\dimen294
+)
+(D:\Ctex\MiKTeX\tex/latex/hyperref\hyperref.sty
+Package: hyperref 2025-07-12 v7.01o Hypertext links for LaTeX
+
+(D:\Ctex\MiKTeX\tex/generic/iftex\iftex.sty
+Package: iftex 2024/12/12 v1.0g TeX engine tests
+)
+(D:\Ctex\MiKTeX\tex/latex/kvsetkeys\kvsetkeys.sty
+Package: kvsetkeys 2022-10-05 v1.19 Key value parser (HO)
+)
+(D:\Ctex\MiKTeX\tex/generic/kvdefinekeys\kvdefinekeys.sty
+Package: kvdefinekeys 2019-12-19 v1.6 Define keys (HO)
+)
+(D:\Ctex\MiKTeX\tex/generic/pdfescape\pdfescape.sty
+Package: pdfescape 2019/12/09 v1.15 Implements pdfTeX's escape features (HO)
+
+(D:\Ctex\MiKTeX\tex/generic/ltxcmds\ltxcmds.sty
+Package: ltxcmds 2023-12-04 v1.26 LaTeX kernel commands for general use (HO)
+)
+(D:\Ctex\MiKTeX\tex/generic/pdftexcmds\pdftexcmds.sty
+Package: pdftexcmds 2020-06-27 v0.33 Utility functions of pdfTeX for LuaTeX (HO
+)
+
+(D:\Ctex\MiKTeX\tex/generic/infwarerr\infwarerr.sty
+Package: infwarerr 2019/12/03 v1.5 Providing info/warning/error messages (HO)
+)
+Package pdftexcmds Info: \pdf@primitive is available.
+Package pdftexcmds Info: \pdf@ifprimitive is available.
+Package pdftexcmds Info: \pdfdraftmode found.
+))
+(D:\Ctex\MiKTeX\tex/latex/hycolor\hycolor.sty
+Package: hycolor 2020-01-27 v1.10 Color options for hyperref/bookmark (HO)
+)
+(D:\Ctex\MiKTeX\tex/latex/hyperref\nameref.sty
+Package: nameref 2025-06-21 v2.57 Cross-referencing by name of section
+
+(D:\Ctex\MiKTeX\tex/latex/refcount\refcount.sty
+Package: refcount 2019/12/15 v3.6 Data extraction from label references (HO)
+)
+(D:\Ctex\MiKTeX\tex/generic/gettitlestring\gettitlestring.sty
+Package: gettitlestring 2019/12/15 v1.6 Cleanup title references (HO)
+
+(D:\Ctex\MiKTeX\tex/latex/kvoptions\kvoptions.sty
+Package: kvoptions 2022-06-15 v3.15 Key value format for package options (HO)
+))
+\c@section@level=\count334
+)
+(D:\Ctex\MiKTeX\tex/latex/etoolbox\etoolbox.sty
+Package: etoolbox 2025/10/02 v2.5m e-TeX tools for LaTeX (JAW)
+\etb@tempcnta=\count335
+)
+(D:\Ctex\MiKTeX\tex/generic/stringenc\stringenc.sty
+Package: stringenc 2019/11/29 v1.12 Convert strings between diff. encodings (HO
+)
+)
+\@linkdim=\dimen295
+\Hy@linkcounter=\count336
+\Hy@pagecounter=\count337
+
+(D:\Ctex\MiKTeX\tex/latex/hyperref\pd1enc.def
+File: pd1enc.def 2025-07-12 v7.01o Hyperref: PDFDocEncoding definition (HO)
+Now handling font encoding PD1 ...
+... no UTF-8 mapping file for font encoding PD1
+)
+(D:\Ctex\MiKTeX\tex/generic/intcalc\intcalc.sty
+Package: intcalc 2019/12/15 v1.3 Expandable calculations with integers (HO)
+)
+\Hy@SavedSpaceFactor=\count338
+
+(D:\Ctex\MiKTeX\tex/latex/hyperref\puenc.def
+File: puenc.def 2025-07-12 v7.01o Hyperref: PDF Unicode definition (HO)
+Now handling font encoding PU ...
+... no UTF-8 mapping file for font encoding PU
+)
+Package hyperref Info: Hyper figures OFF on input line 4195.
+Package hyperref Info: Link nesting OFF on input line 4200.
+Package hyperref Info: Hyper index ON on input line 4203.
+Package hyperref Info: Plain pages OFF on input line 4210.
+Package hyperref Info: Backreferencing OFF on input line 4215.
+Package hyperref Info: Implicit mode ON; LaTeX internals redefined.
+Package hyperref Info: Bookmarks ON on input line 4462.
+\c@Hy@tempcnt=\count339
+LaTeX Info: Redefining \url on input line 4801.
+\XeTeXLinkMargin=\dimen296
+
+(D:\Ctex\MiKTeX\tex/generic/bitset\bitset.sty
+Package: bitset 2019/12/09 v1.3 Handle bit-vector datatype (HO)
+
+(D:\Ctex\MiKTeX\tex/generic/bigintcalc\bigintcalc.sty
+Package: bigintcalc 2019/12/15 v1.5 Expandable calculations on big integers (HO
+)
+))
+\Fld@menulength=\count340
+\Field@Width=\dimen297
+\Fld@charsize=\dimen298
+Package hyperref Info: Hyper figures OFF on input line 6078.
+Package hyperref Info: Link nesting OFF on input line 6083.
+Package hyperref Info: Hyper index ON on input line 6086.
+Package hyperref Info: backreferencing OFF on input line 6093.
+Package hyperref Info: Link coloring OFF on input line 6098.
+Package hyperref Info: Link coloring with OCG OFF on input line 6103.
+Package hyperref Info: PDF/A mode OFF on input line 6108.
+\Hy@abspage=\count341
+\c@Item=\count342
+\c@Hfootnote=\count343
+)
+Package hyperref Info: Driver (autodetected): hpdftex.
+
+(D:\Ctex\MiKTeX\tex/latex/hyperref\hpdftex.def
+File: hpdftex.def 2025-07-12 v7.01o Hyperref driver for pdfTeX
+\Fld@listcount=\count344
+\c@bookmark@seq@number=\count345
+
+(D:\Ctex\MiKTeX\tex/latex/rerunfilecheck\rerunfilecheck.sty
+Package: rerunfilecheck 2025-06-21 v1.11 Rerun checks for auxiliary files (HO)
+
+(D:\Ctex\MiKTeX\tex/generic/uniquecounter\uniquecounter.sty
+Package: uniquecounter 2019/12/15 v1.4 Provide unlimited unique counter (HO)
+)
+Package uniquecounter Info: New unique counter `rerunfilecheck' on input line 2
+84.
+)
+\Hy@SectionHShift=\skip62
+)
+\c@theorem=\count346
+\c@lemma=\count347
+\c@proposition=\count348
+\c@definition=\count349
+\c@remark=\count350
+
+(D:\Ctex\MiKTeX\tex/latex/l3backend\l3backend-pdftex.def
+File: l3backend-pdftex.def 2025-10-09 L3 backend support: PDF output (pdfTeX)
+\l__color_backend_stack_int=\count351
+)
+(freereg_tbme_full.aux)
+\openout1 = `freereg_tbme_full.aux'.
+
+LaTeX Font Info:    Checking defaults for OML/cmm/m/it on input line 42.
+LaTeX Font Info:    ... okay on input line 42.
+LaTeX Font Info:    Checking defaults for OMS/cmsy/m/n on input line 42.
+LaTeX Font Info:    ... okay on input line 42.
+LaTeX Font Info:    Checking defaults for OT1/cmr/m/n on input line 42.
+LaTeX Font Info:    ... okay on input line 42.
+LaTeX Font Info:    Checking defaults for T1/cmr/m/n on input line 42.
+LaTeX Font Info:    ... okay on input line 42.
+LaTeX Font Info:    Checking defaults for TS1/cmr/m/n on input line 42.
+LaTeX Font Info:    ... okay on input line 42.
+LaTeX Font Info:    Checking defaults for OMX/cmex/m/n on input line 42.
+LaTeX Font Info:    ... okay on input line 42.
+LaTeX Font Info:    Checking defaults for U/cmr/m/n on input line 42.
+LaTeX Font Info:    ... okay on input line 42.
+LaTeX Font Info:    Checking defaults for PD1/pdf/m/n on input line 42.
+LaTeX Font Info:    ... okay on input line 42.
+LaTeX Font Info:    Checking defaults for PU/pdf/m/n on input line 42.
+LaTeX Font Info:    ... okay on input line 42.
+ (D:\Ctex\MiKTeX\tex/context/base/mkii\supp-pdf.mkii
+[Loading MPS to PDF converter (version 2006.09.02).]
+\scratchcounter=\count352
+\scratchdimen=\dimen299
+\scratchbox=\box68
+\nofMPsegments=\count353
+\nofMParguments=\count354
+\everyMPshowfont=\toks36
+\MPscratchCnt=\count355
+\MPscratchDim=\dimen300
+\MPnumerator=\count356
+\makeMPintoPDFobject=\count357
+\everyMPtoPDFconversion=\toks37
+) (D:\Ctex\MiKTeX\tex/latex/epstopdf-pkg\epstopdf-base.sty
+Package: epstopdf-base 2020-01-24 v2.11 Base part for package epstopdf
+Package epstopdf-base Info: Redefining graphics rule for `.eps' on input line 4
+85.
+
+(D:\Ctex\MiKTeX\tex/latex/00miktex\epstopdf-sys.cfg
+File: epstopdf-sys.cfg 2021/03/18 v2.0 Configuration of epstopdf for MiKTeX
+))
+\symgns@font=\mathgroup6
+LaTeX Font Info:    Overwriting symbol font `gns@font' in version `bold'
+(Font)                  TS1/ptm/m/n --> TS1/ptm/b/n on input line 42.
+Package gensymb Info: Math companion symbols declared on input line 42.
+LaTeX Info: Redefining \degree on input line 42.
+LaTeX Info: Redefining \celsius on input line 42.
+Package gensymb Info: Using text companion symbols for \degree, \celsius and \p
+erthousand on input line 42.
+LaTeX Info: Redefining \ohm on input line 42.
+Package gensymb Info: Using \textohm for \ohm on input line 42.
+Package gensymb Info: Using \textmu for \micro on input line 42.
+Package hyperref Info: Link coloring OFF on input line 42.
+ (freereg_tbme_full.out)
+(freereg_tbme_full.out)
+\@outlinefile=\write4
+\openout4 = `freereg_tbme_full.out'.
+
+LaTeX Font Info:    Trying to load font information for OT1+phv on input line 5
+4.
+ (D:\Ctex\MiKTeX\tex/latex/psnfss\ot1phv.fd
+File: ot1phv.fd 2020/03/25 scalable font definitions for OT1/phv.
+)
+LaTeX Font Info:    Trying to load font information for U+msa on input line 54.
+
+
+(D:\Ctex\MiKTeX\tex/latex/amsfonts\umsa.fd
+File: umsa.fd 2013/01/14 v3.01 AMS symbols A
+)
+LaTeX Font Info:    Trying to load font information for U+msb on input line 54.
+
+
+(D:\Ctex\MiKTeX\tex/latex/amsfonts\umsb.fd
+File: umsb.fd 2013/01/14 v3.01 AMS symbols B
+)
+LaTeX Font Info:    Trying to load font information for TS1+ptm on input line 5
+4.
+
+(D:\Ctex\MiKTeX\tex/latex/psnfss\ts1ptm.fd
+File: ts1ptm.fd 2001/06/04 font definitions for TS1/ptm.
+)
+LaTeX Font Info:    Font shape `OT1/phv/m/it' in size <8> not available
+(Font)              Font shape `OT1/phv/m/sl' tried instead on input line 54.
+
+
+Package xcolor Warning: Incompatible color definition on input line 58.
+
+LaTeX Font Info:    Font shape `OT1/phv/b/it' in size <8> not available
+(Font)              Font shape `OT1/phv/b/sl' tried instead on input line 58.
+
+Underfull \hbox (badness 10000) in paragraph at lines 58--60
+[]\OT1/phv/b/sl/8 Abstract\OT1/phv/b/n/8 ---[]Image-guided bron-choscopy and tr
+ans-bronchial
+ []
+
+
+Underfull \hbox (badness 7221) in paragraph at lines 58--60
+\OT1/phv/b/n/8 per-frame poses---assumptions that fail un-der un-cal-i-brated
+ []
+
+
+Underfull \hbox (badness 4328) in paragraph at lines 58--60
+\OT1/phv/b/n/8 for-mu-late CT-to-bronchoscopy reg-is-tra-tion as free-coordinat
+e
+ []
+
+
+Underfull \hbox (badness 1466) in paragraph at lines 58--60
+\OT1/phv/b/n/8 es-ti-ma-tion of the pro-jec-tion map-ping among model, cam-era,
+
+ []
+
+
+Underfull \hbox (badness 1668) in paragraph at lines 58--60
+\OT1/phv/b/n/8 and pixel frames, al-low-ing in-trin-sics, depth, rigid pose, an
+d
+ []
+
+
+Underfull \hbox (badness 1931) in paragraph at lines 58--60
+\OT1/phv/b/n/8 a centerline-driven cor-re-spon-dence en-gine that reg-is-ters t
+he
+ []
+
+
+Underfull \hbox (badness 7344) in paragraph at lines 58--60
+\OT1/phv/b/n/8 co-anchored registration--rendering field whose pho-to-met-ric
+ []
+
+
+Underfull \hbox (badness 1924) in paragraph at lines 58--60
+\OT1/phv/b/n/8 resid-ual pro-vides on-line, label-free val-i-da-tion. On 12 cli
+n-i-cal
+ []
+
+
+Underfull \hbox (badness 3815) in paragraph at lines 58--60
+\OT1/phv/b/n/8 poses), FreeReg achieves 4.23mm mean tar-get reg-is-tra-tion
+ []
+
+
+Underfull \hbox (badness 2134) in paragraph at lines 58--60
+\OT1/phv/b/n/8 er-ror (92% un-der 10mm) at 30--80FPS, within the ac-cu-racy
+ []
+
+
+Underfull \hbox (badness 3884) in paragraph at lines 58--60
+\OT1/phv/b/n/8 pose and re-con-struc-tion meth-ods (Foun-da-tion-Pose 104mm,
+ []
+
+
+Package xcolor Warning: Incompatible color definition on input line 62.
+
+
+Underfull \hbox (badness 4634) in paragraph at lines 62--64
+[]\OT1/phv/b/sl/8 Index Terms\OT1/phv/b/n/8 ---[]Bronchoscopy, CT-to-endoscopy 
+reg-is-tra-tion,
+ []
+
+
+Package xcolor Warning: Incompatible color definition on input line 69.
+
+LaTeX Font Info:    Trying to load font information for T1+phv on input line 69
+.
+(D:\Ctex\MiKTeX\tex/latex/psnfss\t1phv.fd
+File: t1phv.fd 2020/03/25 scalable font definitions for T1/phv.
+)
+
+LaTeX Warning: Citation `gildea2006enb' on page 1 undefined on input line 71.
+
+
+LaTeX Warning: Citation `kabsch1976' on page 1 undefined on input line 73.
+
+
+LaTeX Warning: Citation `umeyama1991' on page 1 undefined on input line 73.
+
+
+LaTeX Warning: Citation `besl1992icp' on page 1 undefined on input line 73.
+
+
+LaTeX Warning: Citation `labbe2022megapose' on page 1 undefined on input line 7
+5.
+
+
+LaTeX Warning: Citation `lin2024sam6d' on page 1 undefined on input line 75.
+
+
+LaTeX Warning: Citation `wen2024foundationpose' on page 1 undefined on input li
+ne 75.
+
+
+LaTeX Warning: Citation `wang2024dust3r' on page 1 undefined on input line 75.
+
+
+LaTeX Warning: Citation `wang2025vggt' on page 1 undefined on input line 75.
+
+
+LaTeX Warning: Citation `guo2025endo3r' on page 1 undefined on input line 75.
+
+
+LaTeX Warning: Citation `wang2022endonerf' on page 1 undefined on input line 75
+.
+
+
+LaTeX Warning: Citation `kerbl20233dgs' on page 1 undefined on input line 75.
+
+Package epstopdf Info: Source file: <LOGO-generic-web.eps>
+(epstopdf)                    date: 2026-07-25 22:03:24
+(epstopdf)                    size: 96860 bytes
+(epstopdf)             Output file: <LOGO-generic-web-eps-converted-to.pdf>
+(epstopdf)                    date: 2026-07-25 22:03:24
+(epstopdf)                    size: 6660 bytes
+(epstopdf)             Command: <miktex-epstopdf --outfile=LOGO-generic-web-eps
+-converted-to.pdf LOGO-generic-web.eps>
+(epstopdf)             \includegraphics on input line 78.
+Package epstopdf Info: Output file is already uptodate.
+<LOGO-generic-web-eps-converted-to.pdf, id=83, 55.20625pt x 34.1275pt>
+File: LOGO-generic-web-eps-converted-to.pdf Graphic file (type pdf)
+<use LOGO-generic-web-eps-converted-to.pdf>
+Package pdftex.def Info: LOGO-generic-web-eps-converted-to.pdf  used on input l
+ine 78.
+(pdftex.def)             Requested size: 48.0pt x 29.674pt.
+
+Package xcolor Warning: Incompatible color definition on input line 78.
+
+
+Overfull \hbox (259.0pt too wide) has occurred while \output is active
+[][] 
+ []
+
+
+Overfull \hbox (12.0pt too wide) has occurred while \output is active
+[] [] [] 
+ []
+
+
+Underfull \hbox (badness 10000) has occurred while \output is active
+[]
+ []
+
+
+Overfull \vbox (18.674pt too high) has occurred while \output is active []
+
+
+[1{D:/Ctex/UserData/fonts/map/pdftex/pdftex.map{Unicode.sfd}{UGBK.sfd}}{D:/Ctex
+/MiKTeX/fonts/enc/dvips/base/8r.enc}
+
+
+ <./LOGO-generic-web-eps-converted-to.pdf>]
+<concept_freereg.pdf, id=111, 279.91377pt x 199.47826pt>
+File: concept_freereg.pdf Graphic file (type pdf)
+<use concept_freereg.pdf>
+Package pdftex.def Info: concept_freereg.pdf  used on input line 91.
+(pdftex.def)             Requested size: 136.72755pt x 97.43776pt.
+
+Package xcolor Warning: Incompatible color definition on input line 92.
+
+
+Package xcolor Warning: Incompatible color definition on input line 92.
+
+
+Package xcolor Warning: Incompatible color definition on input line 99.
+
+
+LaTeX Warning: Citation `hodan2018bop' on page 2 undefined on input line 101.
+
+
+LaTeX Warning: Citation `labbe2022megapose' on page 2 undefined on input line 1
+01.
+
+
+LaTeX Warning: Citation `lin2024sam6d' on page 2 undefined on input line 101.
+
+
+LaTeX Warning: Citation `wen2024foundationpose' on page 2 undefined on input li
+ne 101.
+
+
+LaTeX Warning: Citation `kabsch1976' on page 2 undefined on input line 101.
+
+
+LaTeX Warning: Citation `umeyama1991' on page 2 undefined on input line 101.
+
+
+LaTeX Warning: Citation `besl1992icp' on page 2 undefined on input line 101.
+
+
+LaTeX Warning: Citation `rusu2009fpfh' on page 2 undefined on input line 101.
+
+
+LaTeX Warning: Citation `fischler1981ransac' on page 2 undefined on input line 
+101.
+
+
+LaTeX Warning: Citation `lepetit2009epnp' on page 2 undefined on input line 101
+.
+
+
+LaTeX Warning: Citation `wang2024dust3r' on page 2 undefined on input line 103.
+
+
+
+LaTeX Warning: Citation `wang2025vggt' on page 2 undefined on input line 103.
+
+
+LaTeX Warning: Citation `guo2025endo3r' on page 2 undefined on input line 103.
+
+
+LaTeX Warning: Citation `campos2021orbslam3' on page 2 undefined on input line 
+103.
+
+
+LaTeX Warning: Citation `teed2021droidslam' on page 2 undefined on input line 1
+03.
+
+
+LaTeX Warning: Citation `sederberg1986ffd' on page 2 undefined on input line 10
+5.
+
+
+LaTeX Warning: Citation `rueckert1999nonrigid' on page 2 undefined on input lin
+e 105.
+
+
+LaTeX Warning: Citation `sumner2007embedded' on page 2 undefined on input line 
+105.
+
+
+LaTeX Warning: Citation `newcombe2015dynamicfusion' on page 2 undefined on inpu
+t line 105.
+
+
+LaTeX Warning: Citation `wu20244dgs' on page 2 undefined on input line 105.
+
+
+LaTeX Warning: Citation `mountney2010deformation' on page 2 undefined on input 
+line 105.
+
+
+LaTeX Warning: Citation `stoyanov2010stereo' on page 2 undefined on input line 
+105.
+
+
+LaTeX Warning: Citation `kalman1960' on page 2 undefined on input line 107.
+
+
+LaTeX Warning: Citation `sola2018lie' on page 2 undefined on input line 107.
+
+
+LaTeX Warning: Citation `bernhardt2017ar' on page 2 undefined on input line 107
+.
+
+
+LaTeX Warning: Citation `vavra2017ar' on page 2 undefined on input line 107.
+
+
+LaTeX Warning: Citation `gildea2006enb' on page 2 undefined on input line 107.
+
+
+LaTeX Warning: Citation `allan2021scared' on page 2 undefined on input line 107
+.
+
+
+LaTeX Warning: Citation `bobrow2023c3vd' on page 2 undefined on input line 107.
+
+
+
+LaTeX Warning: Citation `kerbl20233dgs' on page 2 undefined on input line 109.
+
+
+LaTeX Warning: Citation `wang2022endonerf' on page 2 undefined on input line 10
+9.
+
+
+LaTeX Warning: Citation `zhu2023endogaussian' on page 2 undefined on input line
+ 109.
+
+
+LaTeX Warning: Citation `laine2020nvdiffrast' on page 2 undefined on input line
+ 109.
+
+
+Package xcolor Warning: Incompatible color definition on input line 114.
+
+
+Package xcolor Warning: Incompatible color definition on input line 116.
+
+LaTeX Font Info:    Font shape `OT1/phv/m/it' in size <9> not available
+(Font)              Font shape `OT1/phv/m/sl' tried instead on input line 116.
+
+Package xcolor Warning: Incompatible color definition on input line 120.
+
+[2 <./concept_freereg.pdf>]
+
+Package xcolor Warning: Incompatible color definition on input line 121.
+
+\width=\dimen301
+
+Package xcolor Warning: Incompatible color definition on input line 126.
+
+
+LaTeX Warning: Citation `longuet1981' on page 3 undefined on input line 139.
+
+
+LaTeX Warning: Citation `hartley2003mvg' on page 3 undefined on input line 139.
+
+
+\width=\dimen302
+
+Package xcolor Warning: Incompatible color definition on input line 149.
+
+
+Package xcolor Warning: Incompatible color definition on input line 166.
+
+
+Package xcolor Warning: Incompatible color definition on input line 168.
+
+<arch_freereg.pdf, id=204, 793.08092pt x 133.08119pt>
+File: arch_freereg.pdf Graphic file (type pdf)
+<use arch_freereg.pdf>
+Package pdftex.def Info: arch_freereg.pdf  used on input line 173.
+(pdftex.def)             Requested size: 516.0pt x 86.58702pt.
+
+Package xcolor Warning: Incompatible color definition on input line 174.
+
+
+Package xcolor Warning: Incompatible color definition on input line 174.
+
+
+Underfull \hbox (badness 10000) in paragraph at lines 183--184
+[]\OT1/ptm/m/n/9 For
+ []
+
+
+Package xcolor Warning: Incompatible color definition on input line 201.
+
+
+LaTeX Warning: Citation `sederberg1986ffd' on page 3 undefined on input line 20
+3.
+
+LaTeX Font Info:    Font shape `OT1/phv/m/it' in size <7> not available
+(Font)              Font shape `OT1/phv/m/sl' tried instead on input line 214.
+
+Package xcolor Warning: Incompatible color definition on input line 214.
+
+[3]
+
+Package xcolor Warning: Incompatible color definition on input line 246.
+
+LaTeX Font Info:    Trying to load font information for U+euf on input line 248
+.
+(D:\Ctex\MiKTeX\tex/latex/amsfonts\ueuf.fd
+File: ueuf.fd 2013/01/14 v3.01 Euler Fraktur
+)
+
+LaTeX Warning: Citation `sola2018lie' on page 4 undefined on input line 248.
+
+
+Package xcolor Warning: Incompatible color definition on input line 254.
+
+[4 <./arch_freereg.pdf>]
+
+Package xcolor Warning: Incompatible color definition on input line 260.
+
+
+LaTeX Warning: Citation `kerbl20233dgs' on page 5 undefined on input line 262.
+
+
+Package xcolor Warning: Incompatible color definition on input line 277.
+
+
+Underfull \hbox (badness 5064) in paragraph at lines 282--283
+[]\OT1/ptm/b/n/9 Metrics. \OT1/ptm/m/n/9 We re-port ADD/ADD-S and the BOP pro-t
+o-col
+ []
+
+
+LaTeX Warning: Citation `allan2021scared' on page 5 undefined on input line 284
+.
+
+
+LaTeX Warning: Citation `hodan2018bop' on page 5 undefined on input line 284.
+
+
+LaTeX Warning: Citation `hodan2018bop' on page 5 undefined on input line 284.
+
+
+Package xcolor Warning: Incompatible color definition on input line 285.
+
+[5]
+\width=\dimen303
+
+
+Package xcolor Warning: Incompatible color definition on input line 288.
+
+LaTeX Font Info:    Calculating math sizes for size <8.5> on input line 291.
+
+LaTeX Warning: Citation `allan2021scared' on page 6 undefined on input line 297
+.
+
+
+LaTeX Warning: Citation `hodan2018bop' on page 6 undefined on input line 299.
+
+
+LaTeX Warning: Citation `hodan2018bop' on page 6 undefined on input line 300.
+
+
+Overfull \hbox (28.11305pt too wide) in paragraph at lines 291--304
+ [][] 
+ []
+
+
+Package xcolor Warning: Incompatible color definition on input line 306.
+
+\width=\dimen304
+
+Package xcolor Warning: Incompatible color definition on input line 311.
+
+
+Underfull \hbox (badness 3536) in paragraph at lines 329--330
+[]\OT1/ptm/b/n/9 Runtime. \OT1/ptm/m/n/9 Ta-ble []V[] breaks down the per-frame
+ cost. The
+ []
+
+\width=\dimen305
+
+Package xcolor Warning: Incompatible color definition on input line 333.
+
+
+Package xcolor Warning: Incompatible color definition on input line 349.
+
+\width=\dimen306
+
+Package xcolor Warning: Incompatible color definition on input line 354.
+
+
+Overfull \hbox (11.3989pt too wide) in paragraph at lines 357--367
+ [][] 
+ []
+
+\width=\dimen307
+
+Package xcolor Warning: Incompatible color definition on input line 377.
+
+
+Package xcolor Warning: Incompatible color definition on input line 392.
+
+[6]
+\width=\dimen308
+
+
+Package xcolor Warning: Incompatible color definition on input line 395.
+
+
+Package xcolor Warning: Incompatible color definition on input line 408.
+
+\width=\dimen309
+
+Package xcolor Warning: Incompatible color definition on input line 413.
+
+
+Overfull \hbox (3.41734pt too wide) in paragraph at lines 415--425
+ [][] 
+ []
+
+
+Package xcolor Warning: Incompatible color definition on input line 427.
+
+\width=\dimen310
+
+Package xcolor Warning: Incompatible color definition on input line 432.
+
+<figs/fig6_dent.png, id=292, 1280.785pt x 597.23125pt>
+File: figs/fig6_dent.png Graphic file (type png)
+<use figs/fig6_dent.png>
+Package pdftex.def Info: figs/fig6_dent.png  used on input line 449.
+(pdftex.def)             Requested size: 252.0pt x 117.50305pt.
+
+Package xcolor Warning: Incompatible color definition on input line 450.
+
+
+Package xcolor Warning: Incompatible color definition on input line 450.
+
+
+Package xcolor Warning: Incompatible color definition on input line 454.
+
+
+Underfull \hbox (badness 1584) in paragraph at lines 455--456
+[]\OT1/ptm/m/n/9 TRE-NN mean 4.23mm / me-dian 2.93mm; 92% $\OML/cmm/m/it/9 <$\O
+T1/ptm/m/n/9 10mm;
+ []
+
+\width=\dimen311
+
+Package xcolor Warning: Incompatible color definition on input line 459.
+
+\width=\dimen312
+
+Package xcolor Warning: Incompatible color definition on input line 477.
+
+<figs/fig_ct_overlay.png, id=298, 1541.76pt x 513.92pt>
+File: figs/fig_ct_overlay.png Graphic file (type png)
+<use figs/fig_ct_overlay.png>
+Package pdftex.def Info: figs/fig_ct_overlay.png  used on input line 498.
+(pdftex.def)             Requested size: 252.0pt x 83.99327pt.
+
+Package xcolor Warning: Incompatible color definition on input line 499.
+
+
+Package xcolor Warning: Incompatible color definition on input line 499.
+
+
+Package xcolor Warning: Incompatible color definition on input line 503.
+
+
+Package xcolor Warning: Incompatible color definition on input line 505.
+
+[7 <./figs/fig6_dent.png (PNG copy)>]
+\width=\dimen313
+
+
+Package xcolor Warning: Incompatible color definition on input line 508.
+
+<figs/fig8_render.png, id=315, 1276.77pt x 668.4975pt>
+File: figs/fig8_render.png Graphic file (type png)
+<use figs/fig8_render.png>
+Package pdftex.def Info: figs/fig8_render.png  used on input line 525.
+(pdftex.def)             Requested size: 252.0pt x 131.94266pt.
+
+Package xcolor Warning: Incompatible color definition on input line 526.
+
+
+Package xcolor Warning: Incompatible color definition on input line 526.
+
+<figs/fig7b_scene.png, id=318, 1011.78pt x 492.84125pt>
+File: figs/fig7b_scene.png Graphic file (type png)
+<use figs/fig7b_scene.png>
+Package pdftex.def Info: figs/fig7b_scene.png  used on input line 532.
+(pdftex.def)             Requested size: 252.0pt x 122.75127pt.
+
+Package xcolor Warning: Incompatible color definition on input line 533.
+
+
+Package xcolor Warning: Incompatible color definition on input line 533.
+
+\width=\dimen314
+
+Package xcolor Warning: Incompatible color definition on input line 543.
+
+\width=\dimen315
+
+Package xcolor Warning: Incompatible color definition on input line 564.
+
+
+Package xcolor Warning: Incompatible color definition on input line 580.
+
+[8 <./figs/fig_ct_overlay.png (PNG copy)> <./figs/fig8_render.png (PNG copy)> <
+./figs/fig7b_scene.png (PNG copy)>]
+<figs/gal_ar.png, id=335, 3408.735pt x 361.35pt>
+File: figs/gal_ar.png Graphic file (type png)
+<use figs/gal_ar.png>
+Package pdftex.def Info: figs/gal_ar.png  used on input line 583.
+(pdftex.def)             Requested size: 515.96938pt x 54.6964pt.
+
+
+Package xcolor Warning: Incompatible color definition on input line 584.
+
+
+Package xcolor Warning: Incompatible color definition on input line 584.
+
+<figs/gal_clin_bronch.png, id=338, 3248.135pt x 646.415pt>
+File: figs/gal_clin_bronch.png Graphic file (type png)
+<use figs/gal_clin_bronch.png>
+Package pdftex.def Info: figs/gal_clin_bronch.png  used on input line 591.
+(pdftex.def)             Requested size: 384.70401pt x 76.56036pt.
+
+Package xcolor Warning: Incompatible color definition on input line 592.
+
+
+Package xcolor Warning: Incompatible color definition on input line 592.
+
+<figs/gal_clin_scared.png, id=341, 2569.6pt x 361.35pt>
+File: figs/gal_clin_scared.png Graphic file (type png)
+<use figs/gal_clin_scared.png>
+Package pdftex.def Info: figs/gal_clin_scared.png  used on input line 598.
+(pdftex.def)             Requested size: 445.41298pt x 62.6362pt.
+
+Package xcolor Warning: Incompatible color definition on input line 599.
+
+
+Package xcolor Warning: Incompatible color definition on input line 599.
+
+
+Package xcolor Warning: Incompatible color definition on input line 606.
+
+LaTeX Font Info:    Trying to load font information for OT1+pcr on input line 6
+16.
+(D:\Ctex\MiKTeX\tex/latex/psnfss\ot1pcr.fd
+File: ot1pcr.fd 2001/06/04 font definitions for OT1/pcr.
+)
+Underfull \hbox (badness 2961) in paragraph at lines 616--617
+[]\OT1/ptm/b/n/9 Reproducibility. \OT1/ptm/m/n/9 The full FreeReg pipeline (ge-
+om-e-try ker-
+ []
+
+
+Package xcolor Warning: Incompatible color definition on input line 621.
+
+
+Package xcolor Warning: Incompatible color definition on input line 627.
+
+
+Package xcolor Warning: Incompatible color definition on input line 633.
+
+No file freereg_tbme_full.bbl.
+
+Package xcolor Warning: Incompatible color definition on input line 639.
+
+[9]
+
+Package xcolor Warning: Incompatible color definition on input line 639.
+
+[10 <./figs/gal_ar.png (PNG copy)> <./figs/gal_clin_bronch.png (PNG copy)> <./f
+igs/gal_clin_scared.png (PNG copy)>] (freereg_tbme_full.aux)
+ ***********
+LaTeX2e <2025-11-01>
+L3 programming layer <2025-11-06>
+ ***********
+
+
+LaTeX Warning: There were undefined references.
+
+Package rerunfilecheck Info: File `freereg_tbme_full.out' has not changed.
+(rerunfilecheck)             Checksum: 81F7BCF6A790FECE498DB729DD1BDA05;4123.
+ ) 
+Here is how much of TeX's memory you used:
+ 22074 strings out of 467833
+ 403377 string characters out of 5431648
+ 822782 words of memory out of 5000000
+ 50498 multiletter control sequences out of 15000+600000
+ 703703 words of font info for 180 fonts, out of 8000000 for 9000
+ 1141 hyphenation exceptions out of 8191
+ 84i,19n,104p,2213b,456s stack positions out of 10000i,1000n,20000p,200000b,200000s
+<D:/Ctex/MiKTeX/fonts/type1/public/amsfonts/cmextra/cmbsy8.pfb><D:/Ctex/MiKTe
+X/fonts/type1/public/amsfonts/cm/cmbx7.pfb><D:/Ctex/MiKTeX/fonts/type1/public/a
+msfonts/cm/cmbx8.pfb><D:/Ctex/MiKTeX/fonts/type1/public/amsfonts/cm/cmbx9.pfb><
+D:/Ctex/MiKTeX/fonts/type1/public/amsfonts/cmextra/cmex9.pfb><D:/Ctex/MiKTeX/fo
+nts/type1/public/amsfonts/cm/cmmi6.pfb><D:/Ctex/MiKTeX/fonts/type1/public/amsfo
+nts/cm/cmmi7.pfb><D:/Ctex/MiKTeX/fonts/type1/public/amsfonts/cm/cmmi8.pfb><D:/C
+tex/MiKTeX/fonts/type1/public/amsfonts/cm/cmmi9.pfb><D:/Ctex/MiKTeX/fonts/type1
+/public/amsfonts/cmextra/cmmib6.pfb><D:/Ctex/MiKTeX/fonts/type1/public/amsfonts
+/cmextra/cmmib7.pfb><D:/Ctex/MiKTeX/fonts/type1/public/amsfonts/cmextra/cmmib8.
+pfb><D:/Ctex/MiKTeX/fonts/type1/public/amsfonts/cmextra/cmmib9.pfb><D:/Ctex/MiK
+TeX/fonts/type1/public/amsfonts/cm/cmr6.pfb><D:/Ctex/MiKTeX/fonts/type1/public/
+amsfonts/cm/cmr7.pfb><D:/Ctex/MiKTeX/fonts/type1/public/amsfonts/cm/cmr8.pfb><D
+:/Ctex/MiKTeX/fonts/type1/public/amsfonts/cm/cmr9.pfb><D:/Ctex/MiKTeX/fonts/typ
+e1/public/amsfonts/cm/cmsy6.pfb><D:/Ctex/MiKTeX/fonts/type1/public/amsfonts/cm/
+cmsy7.pfb><D:/Ctex/MiKTeX/fonts/type1/public/amsfonts/cm/cmsy8.pfb><D:/Ctex/MiK
+TeX/fonts/type1/public/amsfonts/cm/cmsy9.pfb><D:/Ctex/MiKTeX/fonts/type1/public
+/amsfonts/cm/cmti7.pfb><D:/Ctex/MiKTeX/fonts/type1/public/amsfonts/euler/eufm10
+.pfb><D:/Ctex/MiKTeX/fonts/type1/public/amsfonts/symbols/msbm10.pfb><D:/Ctex/Mi
+KTeX/fonts/type1/public/urw-base35/ucrr8a.pfb><D:/Ctex/MiKTeX/fonts/type1/publi
+c/urw-base35/uhvb8a.pfb><D:/Ctex/MiKTeX/fonts/type1/public/urw-base35/uhvbo8a.p
+fb><D:/Ctex/MiKTeX/fonts/type1/public/urw-base35/uhvr8a.pfb><D:/Ctex/MiKTeX/fon
+ts/type1/public/urw-base35/uhvro8a.pfb><D:/Ctex/MiKTeX/fonts/type1/public/urw-b
+ase35/utmb8a.pfb><D:/Ctex/MiKTeX/fonts/type1/public/urw-base35/utmr8a.pfb><D:/C
+tex/MiKTeX/fonts/type1/public/urw-base35/utmri8a.pfb>
+Output written on freereg_tbme_full.pdf (10 pages, 7935850 bytes).
+PDF statistics:
+ 491 PDF objects out of 1000 (max. 8388607)
+ 61 named destinations out of 1000 (max. 500000)
+ 215 words of extra memory for PDF output out of 10000 (max. 10000000)
+

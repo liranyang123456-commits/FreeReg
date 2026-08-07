@@ -179,4 +179,84 @@ with the virtual model anchored on tissue (right).}
 \label{fig:sup_render}
 \end{figure}
 
+%======================================================================
+\section{Full robustness and degradability results}
+Tables~\ref{tab:sup_degrade}--\ref{tab:sup_init} expand the main-text
+robustness summary (Table~XI). The depth-degradation study uses the full-tree
+airway fly-through (case 001, the largest model); its RGB-D baseline
+(8.2\,mm) is therefore above the 12-case cohort mean (4.23\,mm).
+
+\begin{table}[h]
+\centering
+\caption{Depth-quality degradation on the airway fly-through (40 frames).}
+\label{tab:sup_degrade}
+\begin{tabular}{lccc}
+\toprule
+Depth condition & TRE mean (mm) & TRE median (mm) & $<$10\,mm \\
+\midrule
+RGB-D (true, $\sigma{=}0.8$\,mm) & 8.2 & 8.3 & 70\% \\
+Monocular prior (sim.\ drift+noise) & 7.9 & 7.0 & 70\% \\
+Depth-Anything-V2 (real mono) & 65.1 & 72.2 & 4\% \\
+RGB only (centerline) & 28.8 & 21.6 & 9\% \\
+\bottomrule
+\end{tabular}
+\end{table}
+
+\begin{table}[h]
+\centering
+\caption{Occlusion robustness (synthetic occluders, BOP Linemod).}
+\label{tab:sup_occ}
+\begin{tabular}{lccc}
+\toprule
+Fraction occluded & Success & Rot.\ med & ADD-S med (mm) \\
+\midrule
+0\% & 100\% & 3.8$\degree$ & 4.4 \\
+20\% & 100\% & 5.6$\degree$ & 4.7 \\
+40\% & 100\% & 6.7$\degree$ & 5.4 \\
+60\% & 100\% & 10.8$\degree$ & 6.2 \\
+\bottomrule
+\end{tabular}
+\end{table}
+
+\begin{table}[h]
+\centering
+\caption{Initialization robustness (convergence, ADD-S $<$ 10\%d).}
+\label{tab:sup_init}
+\begin{tabular}{lcccc}
+\toprule
+Method & 10$\degree$/10\,mm & 20$\degree$/20\,mm & 30$\degree$/30\,mm & 45$\degree$/40\,mm \\
+\midrule
+Vanilla ICP (BOP rigid) & 100\% & 100\% & 100\% & 100\% \\
+Trimmed ICP (BOP rigid) & 100\% & 100\% & 100\% & 100\% \\
+\midrule
+Airway axial slide & \multicolumn{4}{c}{trimmed 1.03\,mm vs vanilla 5.48\,mm} \\
+\bottomrule
+\end{tabular}
+\end{table}
+
+\textbf{Silhouette-IoU sensitivity to registration error} (AR fusion fidelity).
+On the airway model, silhouette IoU between the registered and ground-truth
+render falls from 1.00 (no error) to 0.77 (0.5\,mm/0.3$\degree$), 0.62
+(1\,mm/0.6$\degree$), 0.44 (2\,mm/1.2$\degree$), and 0.32 (4\,mm/2.3$\degree$);
+refinement halves the photometric residual from 0.325 to 0.163. This couples
+render fidelity directly to registration accuracy, supporting the residual as
+an online validation signal (Fig.~5).
+
+%======================================================================
+\section{Real-video ground-truth annotation protocol}
+\label{sec:sup_gt}
+The main text evaluates quantitative clinical TRE on real-CT synthetic
+fly-throughs with ground-truth poses; real intra-operative video is used for
+qualitative AR demonstration. To prepare real-video quantitative validation, we
+built a dual-reader annotation protocol: FreeReg proposes centerline-projected
+junctions on each frame, two readers independently click the corresponding
+anatomical landmark (carina, main/lobar bronchi), and a consensus step accepts
+pairs agreeing within 15\,px (taking the mean) and flags the rest for
+adjudication. On the pilot annotation batch, both readers produced 30
+landmarks across 5 airway labels; 100\% of pairs agreed within the 15\,px
+tolerance, with a mean inter-reader discrepancy of 6.6\,px (median 6.0\,px).
+This establishes that the annotation workflow is consistent enough to support a
+future dual-reader ground-truth study; we report it here as protocol readiness
+rather than as a validated clinical accuracy claim.
+
 \end{document}

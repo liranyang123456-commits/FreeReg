@@ -1,0 +1,79 @@
+\documentclass[border=8pt,tikz]{standalone}
+\usepackage{tikz}
+\usepackage{graphicx}
+\usepackage{amsmath,amssymb}
+\usetikzlibrary{positioning,arrows.meta,calc,shadows.blur}
+
+\graphicspath{{figs/}{./}}
+
+% rounded image node
+\newcommand{\imgnode}[4]{% name, pos, image, width
+  \node[#2, inner sep=0pt, rounded corners=2pt, draw=black!40,
+        line width=0.5pt, blur shadow] (#1)
+        {\includegraphics[width=#4]{#3}};%
+}
+
+\begin{document}
+\begin{tikzpicture}[
+    font=\footnotesize,
+    arr/.style={-{Stealth[length=2.4mm]}, line width=1.1pt, draw=black!55},
+    fb/.style={-{Stealth[length=2mm]}, line width=0.8pt, dashed, draw=red!60!black},
+    badge/.style={rounded corners=1.5pt, align=center, font=\scriptsize\bfseries,
+                  inner sep=2.2pt, text=white},
+    lab/.style={font=\scriptsize\itshape, align=center, text=black!70},
+  ]
+  \colorlet{colData}{green!50!black!18}
+  \colorlet{colProc}{blue!55!black!14}
+  \colorlet{colOut}{orange!60!black!22}
+
+  % ---- LEFT: inputs (stacked) ----
+  \imgnode{model}{anchor=center}{figs/_concept_model.png}{2.1cm}
+  \node[below=1mm of model, lab] {3D model\\CT / CAD mesh};
+  \imgnode{video}{below=6mm of model}{figs/_concept_endo.png}{2.1cm}
+  \node[below=1mm of video, lab] {image / video\\RGB-D or mono};
+  \node[above=2mm of model, font=\small\bfseries, text=black!75] {Inputs (any)};
+
+  % ---- CENTER: FreeReg engine ----
+  \node[draw=black!45, rounded corners=3pt, fill=colProc, blur shadow,
+        inner sep=5pt, right=1.5cm of $(model)!0.5!(video)$, anchor=center]
+        (freereg) {%
+    \begin{minipage}{4.5cm}
+      \centering
+      \textbf{FreeReg: free-coordinate map}\\[1.5pt]
+      $\mathbf{x}_{p}=\pi_{D}\!\left(K\,\mathbf{T}_{cm}\!\left(\mathbf{X}_{m}+W\!\left(\mathbf{X}_{m}\right)\right)\right)$\\[3pt]
+      {\scriptsize no fixed world frame; each factor}\\[0.5pt]
+      {\scriptsize optional \& degradable}
+    \end{minipage}};
+
+  % degradable-factor chips inside the chain (bottom of center box)
+  \node[badge, fill=blue!55!black, below=1.5mm of freereg.south, xshift=-1.55cm, anchor=north] (cK) {$K$?};
+  \node[badge, fill=blue!55!black, right=0.6mm of cK] (cZ) {$z$?};
+  \node[badge, fill=blue!55!black, right=0.6mm of cZ] (cRT) {$(\mathbf{R},\mathbf{t})$?};
+  \node[badge, fill=teal!60!black, right=0.6mm of cRT] (cW) {$W$?};
+  \node[lab, below=0.4mm of cZ.south, xshift=3mm] {estimated or clamped};
+
+  % ---- RIGHT: output AR overlay ----
+  \imgnode{out}{right=1.5cm of freereg, anchor=center}{figs/_concept_ar.png}{2.5cm}
+  \node[below=1mm of out, lab] {anchored AR / MR overlay};
+  \node[above=2mm of out, font=\small\bfseries, text=black!75] {Output};
+
+  % ---- arrows input -> engine -> output ----
+  \draw[arr] (model.east) -- (freereg.160);
+  \draw[arr] (video.east) -- (freereg.200);
+  \draw[arr] (freereg.east) -- (out.west);
+
+  % ---- feedback: online validation ----
+  \draw[fb] (out.south) |- ++(0,-0.95) -|
+    node[pos=0.25, below, font=\scriptsize\itshape, text=red!55!black]
+    {photometric residual = online validation}
+    (freereg.south);
+
+  % ---- value badges: tight row anchored under the engine ----
+  \node[badge, fill=green!45!black, anchor=north]
+    at ([xshift=-2.35cm, yshift=-2.0cm]freereg.south) {calibration-free};
+  \node[badge, fill=orange!75!black, anchor=north]
+    at ([yshift=-2.0cm]freereg.south) {observability-bounded};
+  \node[badge, fill=purple!60!black, anchor=north]
+    at ([xshift=2.35cm, yshift=-2.0cm]freereg.south) {occlusion-aware};
+\end{tikzpicture}
+\end{document}
