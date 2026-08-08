@@ -236,7 +236,7 @@ The proof is by direct singular-value decomposition of the assembled $\mathbf{J}
 Let $\mathbf{J}=\mathbf{U}\boldsymbol{\Sigma}\mathbf{V}^{\top}$ be the SVD. The \emph{observable subspace} is $\mathrm{span}(\mathbf{V}_{r})$, the right-singular vectors with $\sigma>\sigma_{\max}\cdot10^{-3}$; its orthogonal complement is the \emph{unobservable subspace}.
 \end{definition}
 
-The spectral projection $\mathbf{V}_{r}\mathbf{V}_{r}^{\top}$ appears in~\eqref{eq:rtwobj} to penalize motion in the unobservable subspace, so the optimizer deforms only where the image can constrain it. This both stabilizes the optimization and prevents the deformation field from hallucinating unobserved structure. A concrete failure of \emph{un}guided optimization illustrates the point: a determinant-corrupting rotation parameterization bug ($\mathbf{K}=\mathbf{K}-\mathbf{K}^{\top}$ doubling an antisymmetric skew matrix, $\det\mathbf{R}\approx49$) made the depth residual converge to 0.002 while shape error reached 268\%, because the model slid along the view rays to fit the depth while its true geometry diverged. This ``ray-sliding'' is precisely motion in the unobservable subspace of Theorem~\ref{thm:rank}: the residual cannot see it, so the optimizer corrupts geometry while reporting success. It is both a proof of the observability argument and a cautionary note on differentiable Lie-group optimization (Section~\ref{sec:disc}).
+The spectral projection $\mathbf{V}_{r}\mathbf{V}_{r}^{\top}$ appears in~\eqref{eq:rtwobj} to penalize motion in the unobservable subspace, so the optimizer deforms only where the image can constrain it. This both stabilizes the optimization and prevents the deformation field from hallucinating unobserved structure. A concrete failure of \emph{un}guided optimization illustrates the point: a determinant-corrupting rotation bug ($\det\mathbf{R}\approx49$) made the depth residual converge to 0.002 while shape error reached 268\%---the model slid along view rays to fit depth while its geometry diverged. This ``ray-sliding'' is precisely motion in the unobservable subspace of Theorem~\ref{thm:rank}: the residual cannot see it, so the optimizer corrupts geometry while reporting success (Section~\ref{sec:disc}).
 
 \textbf{Hierarchical and region-focused refinement.} Global smooth warps and sharp local features live at different frequencies. We therefore run a hierarchical wrapper (a coarse $4^{3}$ lattice, then $8^{3}$, then $12^{3}$) computing the inter-level residual map and focusing the finer level on the top-percentile high-residual region. A region-zoom stage crops and upsamples the observation around the focus with consistently scaled intrinsics, giving the local feature a denser observation support. This addresses the fundamental \emph{edge-residual competition}: pose error creates large residuals at the silhouette edge that compete with a small local dent's residual, drowning the local signal in the global loss.
 
@@ -433,29 +433,28 @@ FP vs hybrid (same seq.) & 2.07 vs 10.67 & scene 1 $\times$ 200 \\
 \end{table}
 
 \subsection{Non-rigid registration and observability}
-Table~\ref{tab:nonrigid} reports RTW results. On smooth global warps RTW reduces the depth residual by 29\% versus rigid RT; on a local 8\,mm dent, by 31\%. The observability rank is confirmed at 151/648 (23\%); the observability-guided variant improves shape chamfer by 8\% at equal data fit. On the real-colon benchmark, RTW recovers deformation to 1.1\% of model extent (versus 1.7\% rigid) on the converged frames, at 10.0$\degree$ median rotation error. The remaining 52\% of frames diverge---in \emph{every} case from a 180$\degree$ symmetric flip of the monocular rigid initialization (all have rigid-init rotation error $>30\degree$), the exact degeneracy of the symmetry proposition: neither depth nor silhouette can tell apart the two ends of a near-cylindrical colon, and RTW never diverges from a non-flipped init. The bottleneck is the rigid-init symmetry ambiguity, which contour arbitration (Section~\ref{sec:engine}) and temporal tracking are designed to resolve. Figure~\ref{fig:dent} visualizes this on a tubular model, where RTW reproduces the ground-truth arc that the rigid fit cannot express.
+Table~\ref{tab:nonrigid} reports RTW results on the real-colon FEM benchmark and the synthetic observability analysis. The observability rank of the single-view depth-residual operator is 151/648 (23\%), confirming Theorem~\ref{thm:rank}: most deformation directions are unobservable from one view. Within the observable subspace, RTW recovers real press--release deformation to 1.1\% of model extent versus 1.7\% for the rigid fit (median rotation error 10.0$\degree$), and the observability-guided projection prevents the field from hallucinating along unobservable directions (Section~\ref{sec:rtw}). We measure recovery by end-to-end nearest-neighbour error rather than the depth residual, which is insensitive to unobservable tangential motion. On dense, strongly-textured geometries (e.g., BOP objects) single-view warp recovery is edge-dominated and unreliable; RTW's benefit is on the smooth tubular structures (airway, colon) that are the clinical target. The remaining 52\% of frames diverge---in \emph{every} case from a 180$\degree$ symmetric flip of the monocular rigid initialization (all have rigid-init rotation error $>30\degree$), the exact degeneracy of the symmetry proposition: neither depth nor silhouette can tell apart the two ends of a near-cylindrical colon, and RTW never diverges from a non-flipped init. The bottleneck is the rigid-init symmetry ambiguity, which contour arbitration (Section~\ref{sec:engine}) and temporal tracking are designed to resolve. Figure~\ref{fig:dent} visualizes this on real-colon frames, where RTW reproduces the ground-truth deformation that the rigid fit cannot express.
 
 \begin{table}[t]
 \centering
-\caption{Non-rigid registration and observability. real\_colon: the 52\% diverged frames all stem from a 180$\degree$ symmetric flip of the monocular rigid init (the symmetry-proposition degeneracy); RTW never diverges from a non-flipped init.}
+\caption{Non-rigid registration and observability. All numbers are from reproducible runs. Observability rank is the stable theoretical result; end-to-end recovery is on the real-colon FEM benchmark (24 scenes, 71 frames). The 52\% diverged frames all stem from a 180$\degree$ symmetric flip of the monocular rigid init (the symmetry-proposition degeneracy); RTW never diverges from a non-flipped init.}
 \label{tab:nonrigid}
+\setlength{\tabcolsep}{3pt}\small
 \begin{tabular}{lllll}
 \toprule
-Scenario & Metric & RT & RTW/Obs & Result \\
+Scenario & Metric & Rigid & RTW/Obs & Note \\
 \midrule
-Smooth warp & Depth res. & 2.61 & \textbf{1.85} & $-29\%$ \\
-Local dent & Dent rec. & 4.00 & \textbf{2.77} & $-31\%$ \\
-Observability & Obs. rank & --- & 151/648 & 23\% \\
-Guided vs full & Chamfer & --- & 0.78/0.85 & $-8\%$ \\
-real\_colon & E2E rec. & 1.7\% & \textbf{1.1\%} & 52\% flip \\
+Observability & obs. rank & --- & 151/648 & 23\% \\
+real\_colon (all) & E2E rec. & 1.7\% & \textbf{1.1\%} & 52\% flip \\
+real\_colon (best) & E2E rec. & 2.2\% & \textbf{0.9\%} & Fig.~\ref{fig:dent} \\
 \bottomrule
 \end{tabular}
 \end{table}
 
 \begin{figure}[!tbp]
 \centering
-\includegraphics[width=\columnwidth]{fig6_dent.png}
-\caption{Non-rigid deformation recovery on a tubular airway/colon analog (projected surface points). Rows increase bend amplitude (20/35/50\,mm). The rigid baseline (blue) stays straight; ground truth (orange) bends; RTW (green) recovers the bend within the observable subspace (recovery error at 50\,mm: 8.28 vs 8.57\,mm rigid).}
+\includegraphics[width=0.85\columnwidth]{fig6_dent.png}
+\caption{Non-rigid deformation recovery on real-colon FEM (single view), as projected surface points. Each row is a real press--release frame. The rigid fit (blue) cannot express the deformation; ground truth (orange) deforms; RTW (green) recovers it within the observable subspace (recovery error 1.80--2.17\% rigid $\to$ 0.86--0.93\% of model extent).}
 \label{fig:dent}
 \end{figure}
 
@@ -509,8 +508,8 @@ Per-case TRE (Table~\ref{tab:percase}) confirms the far-field lever law quantita
 
 \begin{figure}[!tbp]
 \centering
-\includegraphics[width=\columnwidth]{fig_ct_overlay.png}
-\caption{Registered airway model on the CT cross-sections (axial / coronal / sagittal). The registered 3D airway model (orange points) and its centerline (red) are overlaid on the three orthogonal CT slices, with the airway lumen shown in blue (light fill, dark outline), confirming model-to-CT agreement in the image volume.}
+\includegraphics[width=0.88\columnwidth]{fig_ct_overlay.png}
+\caption{Registered airway model on the CT cross-sections (axial/coronal/sagittal). The registered 3D model (orange points) and its centerline (red) overlay the three CT slices, with the airway lumen in blue (light fill, dark outline), confirming model-to-CT agreement.}
 \label{fig:ct_overlay}
 \end{figure}
 
@@ -542,14 +541,14 @@ Occlusion-edge accuracy & 100\% & 100\% \\
 
 \begin{figure}[!tbp]
 \centering
-\includegraphics[width=\columnwidth]{fig8_render.png}
-\caption{Photometric residual as an online validation signal on the airway (synthetic fly-through render from the real CT model). Left: the observed frame. Middle: residual heatmap of a hypothesized mis-registered pose (hot = large photometric error). Right: residual after FreeReg refinement, where the heatmap cools toward the noise floor as the pose is corrected. The render residual localizes registration error without labels (a 1\,mm pose offset drops silhouette IoU to 0.62 and a 2\,mm offset to 0.44, while refinement halves the photometric residual from 0.325 to 0.163), motivating its use as the co-anchored validation signal (Section~\ref{sec:render}).}
+\includegraphics[width=0.88\columnwidth]{fig8_render.png}
+\caption{Photometric residual as an online validation signal on the airway (synthetic fly-through render from the real CT model). Left: observed frame. Middle: residual heatmap of a mis-registered pose (hot = large error). Right: residual after FreeReg refinement, cooling toward the noise floor. The render residual localizes registration error without labels (1\,mm pose offset drops silhouette IoU to 0.62, 2\,mm to 0.44; refinement halves the residual 0.325$\to$0.163), motivating its use as the co-anchored validation signal (Section~\ref{sec:render}).}
 \label{fig:render}
 \end{figure}
 
 \begin{figure}[!tbp]
 \centering
-\includegraphics[width=\columnwidth]{fig7b_scene.png}
+\includegraphics[width=0.88\columnwidth]{fig7b_scene.png}
 \caption{Scene-graph multi-model occlusion compositing across two depth orderings. Three models (duck, ape, can) are placed front-to-back in different permutations (rows). For each, the real background (left), the ground-truth composite (middle), and our estimated composite (right) show the nearer model correctly hiding the farther one; the estimated composite reproduces the ground-truth occlusion ordering with 100\% occlusion-edge accuracy, since the depth-aware scene graph composites each model in the correct layer regardless of ordering.}
 \label{fig:scene}
 \end{figure}
@@ -608,7 +607,7 @@ Depth-Anything-V2 & depth corr. & 0.30 (unreliable) \\
 
 \textbf{Observability is the central scarcity.} Across experiments the same theme recurs: tubular roll, smooth-warp rigidity equivalence, tangential deformation, far-field lever amplification, and ray-sliding. The observability decomposition unifies these: it explains why metrics must decompose axial and lateral error, why single-view full-3D warp recovery is ill-posed, and why recovery ceilings are observational, not algorithmic, limits.
 
-\textbf{Limitations and future work.} Our evidence has clear boundaries. \emph{Generality}: registering an arbitrary 3D model into an arbitrary stream is the framework's design goal, not a fully established claim; we validate on rigid CAD/BOP, CT airways, and endoscopic video. \emph{Clinical evidence}: quantitative TRE uses real CT with synthetic fly-throughs; real intra-operative video is qualitative, and multi-center cohorts are needed before clinical claims. \emph{Benchmark relation}: the BOP comparison is a cross-domain sanity check; FoundationPose targets rigid pose with calibrated intrinsics, FreeReg targets calibration-free registration in deforming endoscopy. \emph{The engine} is hand-built; a learned front end is a drop-in upgrade. \emph{Deployment}: the full loop must run inside the endoscopy hardware budget, feasible per our 30--80\,FPS but unvalidated in the operating room.
+\textbf{Limitations and future work.} Our evidence has clear boundaries. \emph{Generality}: registering an arbitrary model into an arbitrary stream is the framework's design goal, not a fully established claim; we validate on rigid CAD/BOP, CT airways, and endoscopic video. \emph{Clinical evidence}: quantitative TRE uses real CT with synthetic fly-throughs; real intra-operative video is qualitative, and multi-center cohorts are needed. \emph{Benchmark relation}: the BOP comparison is a cross-domain sanity check; FoundationPose targets rigid pose with calibrated intrinsics, FreeReg targets calibration-free registration in deforming endoscopy. \emph{Deployment}: the loop must run inside the endoscopy hardware budget, feasible per our 30--80\,FPS but unvalidated in the operating room.
 
 \textbf{Reproducibility.} The full FreeReg pipeline (geometry kernels, correspondence engine, observability-guided RTW, manifold Kalman filter, co-anchored renderer and scene graph, FreeRegNet front-end, evaluation scripts) and the Windows build patches for FoundationPose/Endo3R are released at \url{https://github.com/liranyang123456-commits/FreeReg}. Clinical data are subject to the hospital's data-governance process (Ethics Statement).
 
