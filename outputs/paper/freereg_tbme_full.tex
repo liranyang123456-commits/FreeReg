@@ -460,8 +460,8 @@ real\_colon & E2E rec. & 1.5\% & \textbf{1.1\%} & no diver. \\
 \subsection{Clinical registration (12 cases, 270 frames)}
 \begin{figure*}[!t]
 \centering
-\includegraphics[width=\textwidth,height=0.11\textheight,keepaspectratio]{gal_clin_bronch.png}
-\caption{CT-to-bronchoscopy registration on the clinical cohort. Each panel is a pure endoscopic Live-View crop with FreeReg centerline correspondence (green lumen skeleton; red projected CT centerline; yellow bifurcations), spanning diverse airway depths and bifurcations where depth-based ICP is unreliable, at 4.23\,mm mean TRE (Table~\ref{tab:clinical}).}
+\includegraphics[width=\textwidth,height=0.085\textheight,keepaspectratio]{gal_clin_bronch.png}
+\caption{CT-to-bronchoscopy registration, shown stage-by-stage on two clinical Live-View frames. Depth-based ICP is unreliable in the textureless, tubular airway, so FreeReg registers by \emph{centerline correspondence}. \textbf{Green}: airway-lumen skeleton detected in the endoscopic image (the observation). \textbf{Red}: preoperative CT centerline projected into the image. \textbf{Before reg.} the red CT centerline sits far off the green observation (initial pose); \textbf{after FreeReg} it hugs the green lumen, with matched bifurcations in \textbf{yellow}. The per-frame centerline residual drops from 232$\to$12.5\,px and 298$\to$24\,px, at 4.23\,mm mean TRE (Table~\ref{tab:clinical}).}
 \label{fig:gal_clin}
 \end{figure*}
 TRE-NN mean 4.23\,mm / median 2.93\,mm; 92\% $<$10\,mm; Wilcoxon $p=4.4\times10^{-31}$ versus the filtered variant; 12--38\,ms/frame (30--80\,FPS). Failure cases (data quality) were excluded with documented reasons. Centerline correspondence registers $0.0\degree$/6.6\,mm inside the airway where depth ICP collapses (38.1\,mm). Smaller airway models yielded better TRE (2.2--2.4\,mm versus 8.4\,mm), confirming the far-field lever law (error $\propto$ model span). Table~\ref{tab:clinical} summarizes the cohort statistics; Fig.~\ref{fig:gal_clin} shows the overlay and centerline correspondence.
