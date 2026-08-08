@@ -37,10 +37,10 @@ from make_centerline_endo_fig import extract_live_view, _align_rot, VIDEO, MASK_
 OUT_DIR = Path('outputs/ct/centerline')
 FIG_OUT = Path('outputs/paper/figs/gal_clin_bronch.png')
 
-FRAMES = [14800, 13400]          # two representative frames -> two rows
-CELL = 400
+FRAMES = [14800]          # one representative frame -> one clear row
+CELL = 340
 GAP = 8
-LEGEND_H = 54
+LEGEND_H = 52
 TITLE_H = 34
 
 
