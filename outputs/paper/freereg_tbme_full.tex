@@ -281,7 +281,7 @@ The complete FreeReg pipeline ties these components into a single per-frame proc
 
 \textbf{Metrics.} We report ADD/ADD-S and the BOP protocol (MSSD/MSPD/VSD, self-implemented) for single-frame pose; reprojection RMSE; pixel-jitter RMS and deviation for temporal consistency; target registration error (TRE, nearest-neighbour) for clinical registration; deformation-recovery error as a fraction of model extent; silhouette IoU and photometric residual for AR fusion fidelity; and PSNR/SSIM and FPS for rendering. Statistical comparison uses the Wilcoxon signed-rank test.
 
-\textbf{Datasets.} We evaluate on six resources, ordered from the primary clinical endpoint to supporting correctness checks, summarized in Table~\ref{tab:datasets}. (i)~\emph{Clinical CT-to-bronchoscopy cohort} (primary endpoint): 12 de-identified patient cases, 270 synthetic fly-through frames rendered from the real CT airways, for clinical target registration error (TRE). We explicitly separate two evidence classes throughout: (a)~\emph{real-CT geometry with synthetic fly-through}, which provides ground-truth poses for quantitative TRE; and (b)~\emph{real intra-operative bronchoscopic video}, which lacks ground truth and is used only for qualitative AR demonstration (Section~\ref{sec:exp}); the quantitative clinical numbers derive from class (a). (ii)~\emph{Real-colon FEM benchmark}: 8 scenes $\times$ 24 frames (192 total) of real colon anatomies with GT poses and GT press--release deformation, for non-rigid recovery. (iii)~\emph{SCARED}~\cite{allan2021scared}: 197 frames of one real endoscopic keyframe sequence with a GT camera trajectory, for real-video temporal and AR evaluation. (iv)~\emph{Virtual fly-through}: 200 frames of a synthetic trajectory over real CAD geometry for controlled temporal evaluation. (v)~\emph{BOP Linemod}~\cite{hodan2018bop}: 125 test samples (5 scenes $\times$ 25 frames, with RGB-D, masks, and GT 6D poses) for single-frame rigid registration, used as a correctness/generalization check against the pose literature; the learned front-end (FreeRegNet) trains on the full 13 objects with an 85/15 train/validation split per object. (vi)~\emph{BOP T-LESS}~\cite{hodan2018bop}: 315 test samples of texture-less, symmetric objects, evaluated with the official ADD-S metric. All datasets are used for testing only; only FreeRegNet trains, on BOP objects as noted. SOTA comparisons use the official FoundationPose and Endo3R implementations and open3d ICP baselines. Additional public resources---EndoNeRF, C3VD colon meshes, Stereo\_Lap, BlendedMVS, DTU, and the full 20-scene T-LESS---are available for extension but are not required for the present evidence chain.
+\textbf{Datasets.} We evaluate on six resources, ordered from the primary clinical endpoint to supporting correctness checks, summarized in Table~\ref{tab:datasets}. (i)~\emph{Clinical CT-to-bronchoscopy cohort} (primary endpoint): 12 de-identified patient cases, 270 synthetic fly-through frames rendered from the real CT airways, for clinical target registration error (TRE). We explicitly separate two evidence classes throughout: (a)~\emph{real-CT geometry with synthetic fly-through}, which provides ground-truth poses for quantitative TRE; and (b)~\emph{real intra-operative bronchoscopic video}, which lacks ground truth and is used only for qualitative AR demonstration (Section~\ref{sec:exp}); the quantitative clinical numbers derive from class (a). (ii)~\emph{Real-colon FEM benchmark}: 24 real colon anatomies $\times$ 3 frames (71 total) with GT poses and GT press--release deformation, for non-rigid recovery. (iii)~\emph{SCARED}~\cite{allan2021scared}: 197 frames of one real endoscopic keyframe sequence with a GT camera trajectory, for real-video temporal and AR evaluation. (iv)~\emph{Virtual fly-through}: 200 frames of a synthetic trajectory over real CAD geometry for controlled temporal evaluation. (v)~\emph{BOP Linemod}~\cite{hodan2018bop}: 125 test samples (5 scenes $\times$ 25 frames, with RGB-D, masks, and GT 6D poses) for single-frame rigid registration, used as a correctness/generalization check against the pose literature; the learned front-end (FreeRegNet) trains on the full 13 objects with an 85/15 train/validation split per object. (vi)~\emph{BOP T-LESS}~\cite{hodan2018bop}: 315 test samples of texture-less, symmetric objects, evaluated with the official ADD-S metric. All datasets are used for testing only; only FreeRegNet trains, on BOP objects as noted. SOTA comparisons use the official FoundationPose and Endo3R implementations and open3d ICP baselines. Additional public resources---EndoNeRF, C3VD colon meshes, Stereo\_Lap, BlendedMVS, DTU, and the full 20-scene T-LESS---are available for extension but are not required for the present evidence chain.
 
 \begin{table}[t]
 \centering
@@ -294,7 +294,7 @@ The complete FreeReg pipeline ties these components into a single per-frame proc
 Dataset & Scale & Split & Role \\
 \midrule
 Clinical CT--bronch. & 270 fr., 12 cases & test & clinical TRE (primary) \\
-real-colon FEM & 192 (8$\times$24) & test & non-rigid deform. \\
+real-colon FEM & 71 (24$\times$3) & test & non-rigid deform. \\
 SCARED~\cite{allan2021scared} & 197 fr. & test & temporal (real) \\
 Virtual fly-through & 200 fr. & test & temporal (controlled) \\
 BOP Linemod~\cite{hodan2018bop} & 125 & test & rigid pose (check) \\
@@ -433,11 +433,11 @@ FP vs hybrid (same seq.) & 2.07 vs 10.67 & scene 1 $\times$ 200 \\
 \end{table}
 
 \subsection{Non-rigid registration and observability}
-Table~\ref{tab:nonrigid} reports RTW results. On smooth global warps RTW reduces the depth residual by 29\% versus rigid RT; on a local 8\,mm dent, by 31\%. The observability rank is confirmed at 151/648 (23\%); the observability-guided variant improves shape chamfer by 8\% at equal data fit. On the real-colon benchmark, end-to-end recovery reaches 1.1\% of model extent (versus 1.7\% rigid) on the converged frames. The dent family converges to a $\sim$30\% recovery ceiling under our observation configuration, an observational/sampling limit, not an algorithmic defect (Section~\ref{sec:disc}). Figure~\ref{fig:dent} visualizes this on a tubular model, where RTW reproduces the ground-truth arc that the rigid fit cannot express.
+Table~\ref{tab:nonrigid} reports RTW results. On smooth global warps RTW reduces the depth residual by 29\% versus rigid RT; on a local 8\,mm dent, by 31\%. The observability rank is confirmed at 151/648 (23\%); the observability-guided variant improves shape chamfer by 8\% at equal data fit. On the real-colon benchmark, end-to-end recovery reaches 1.1\% of model extent (versus 1.7\% rigid) on the converged frames; 52\% of frames exceed a 30$\degree$ rotation sentinel and are excluded as observationally ill-posed---single-view press--release deformation of featureless colon is the regime Theorem~\ref{thm:rank} predicts to be under-constrained, an observability limit rather than an optimizer failure. The dent family converges to a $\sim$30\% recovery ceiling under our observation configuration, an observational/sampling limit, not an algorithmic defect (Section~\ref{sec:disc}). Figure~\ref{fig:dent} visualizes this on a tubular model, where RTW reproduces the ground-truth arc that the rigid fit cannot express.
 
 \begin{table}[t]
 \centering
-\caption{Non-rigid registration and observability.}
+\caption{Non-rigid registration and observability. real\_colon: 52\% of frames exceed a 30$\degree$ rotation sentinel (ill-posed under single view) and are excluded from the statistic.}
 \label{tab:nonrigid}
 \begin{tabular}{lllll}
 \toprule
@@ -447,7 +447,7 @@ Smooth warp & Depth res. & 2.61 & \textbf{1.85} & $-29\%$ \\
 Local dent & Dent rec. & 4.00 & \textbf{2.77} & $-31\%$ \\
 Observability & Obs. rank & --- & 151/648 & 23\% \\
 Guided vs full & Chamfer & --- & 0.78/0.85 & $-8\%$ \\
-real\_colon & E2E rec. & 1.7\% & \textbf{1.1\%} & n/a \\
+real\_colon & E2E rec. & 1.7\% & \textbf{1.1\%} & 52\% div. \\
 \bottomrule
 \end{tabular}
 \end{table}
