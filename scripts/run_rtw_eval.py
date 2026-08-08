@@ -165,10 +165,15 @@ def main():
           f'位姿误差 rot={rot_r:.2f}° t={tr_r:.2f}mm  耗时={t_rigid:.2f}s')
 
     # 4) 方法B: RTW (投影数据关联: 深度残差直接定义在成像平面) ----------
+    # 完整配置: two_phase(先收敛位姿治R-δ耦合) + edge_band(排除剪影边缘竞争)
+    # + inlier门限覆盖形变幅度(max~5.9mm) + lambda_pose锚定
     t0 = time.time()
     rtw = rtw_optimize_projective(model, depth_obs, K, T_rigid,
                                   grid=(4, 4, 4), iters=400, lr=1e-2,
                                   lambda_mag=1e-4, lambda_sm=1e-3,
+                                  lambda_p2p=1.0, lambda_pose=1.0,
+                                  two_phase=True, edge_band_px=0.0,
+                                  inlier_hi=15.0, inlier_lo=8.0,
                                   device=device, seed=0, verbose=True)
     t_rtw = time.time() - t0
     V_cam_rtw = transform(rtw['T'], rtw['V_def'])

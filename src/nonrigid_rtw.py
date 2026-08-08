@@ -709,15 +709,18 @@ def rtw_optimize_projective(model_pts: np.ndarray, depth_img: np.ndarray,
         ar = res.abs()
         huber = torch.where(ar <= thr, 0.5 * ar ** 2 / max(float(thr), 1e-9),
                             ar - 0.5 * thr)
-        n_inl = int(((ar < thr) & valid).sum().item())
+        # 仅在内点(可见前向表面, |res|<thr)上取数据项; 背面被遮挡点(z_pred>>
+        # z_obs, 残差极大)若计入会被 Huber 线性化仍主导 loss, 淹没形变信号
+        inl = valid & (ar < thr)
+        n_inl = int(inl.sum().item())
         if n_inl < 20:
             data = res.abs().mean()
         else:
             if focal_gamma > 0:
                 w = (ar / ar.max().clamp(min=1e-9)) ** focal_gamma
-                data = (w * huber)[valid].sum() / w[valid].sum().clamp(min=1e-9)
+                data = (w * huber)[inl].sum() / w[inl].sum().clamp(min=1e-9)
             else:
-                data = huber[valid].mean()
+                data = huber[inl].mean()
         # 剪影约束
         in_img = (u >= 0) & (u < Wimg) & (v >= 0) & (v < Himg) \
             & (V_cam[:, 2] > 1e-3)
