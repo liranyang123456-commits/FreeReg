@@ -451,12 +451,12 @@ real\_colon (best) & E2E rec. & 2.2\% & \textbf{0.9\%} & Fig.~\ref{fig:dent} \\
 \end{tabular}
 \end{table}
 
-\begin{figure}[!tbp]
+\begin{figure*}[!t]
 \centering
-\includegraphics[width=0.85\columnwidth]{fig6_dent.png}
+\includegraphics[width=\textwidth,height=0.095\textheight,keepaspectratio]{fig6_dent.png}
 \caption{Non-rigid registration and its observability structure (single view). \emph{Left}: real-colon FEM press--release frames---the rigid fit (blue) cannot express the deformation, ground truth (orange) deforms, RTW (green) recovers it within the observable subspace (recovery error 1.80--2.17\% $\to$ 0.86--0.93\% of extent). \emph{Right top}: RTW recovery falls monotonically as the deformation rotates into the unobservable subspace (a direct measurement of Theorem~\ref{thm:rank}). \emph{Right bottom}: adding views lifts the observable rank from 23\% (one view) to 41\% (two) and 44\% (six)---stereo/multi-view acquisition is a hardware-level upgrade.}
 \label{fig:dent}
-\end{figure}
+\end{figure*}
 
 \subsection{Clinical registration (12 cases, 270 frames)}
 \begin{figure}[!t]
@@ -465,7 +465,7 @@ real\_colon (best) & E2E rec. & 2.2\% & \textbf{0.9\%} & Fig.~\ref{fig:dent} \\
 \caption{CT-to-bronchoscopy registration, stage-by-stage on a \emph{real intra-operative} Live-View frame (qualitative, class-b evidence; no ground-truth pose). \textbf{Green}: airway-lumen skeleton detected in the image (the observation); \textbf{red}: projected CT centerline; \textbf{yellow}: matched bifurcations. Before registration red lies off the green observation; after FreeReg it hugs it (correctness = red overlapping green; residual 232$\to$12.5\,px). The 4.23\,mm TRE of Table~\ref{tab:clinical} is measured separately on synthetic fly-throughs with ground truth.}
 \label{fig:gal_clin}
 \end{figure}
-TRE-NN mean 4.23\,mm / median 2.93\,mm; 92\% $<$10\,mm; Wilcoxon $p=4.4\times10^{-31}$ versus the filtered variant; 12--38\,ms/frame (30--80\,FPS). Failure cases (data quality) were excluded with documented reasons. Centerline correspondence registers $0.0\degree$/6.6\,mm inside the airway where depth ICP collapses (38.1\,mm). Table~\ref{tab:clinical} summarizes the cohort statistics.
+TRE-NN mean 4.23\,mm / median 2.93\,mm; 92\% $<$10\,mm; Wilcoxon $p=4.4\times10^{-31}$ versus the filtered variant; 12--38\,ms/frame (30--80\,FPS); data-quality failures excluded with documented reasons. Centerline correspondence registers $0.0\degree$/6.6\,mm inside the airway where depth ICP collapses (38.1\,mm). Table~\ref{tab:clinical} summarizes the cohort statistics.
 
 Fig.~\ref{fig:gal_clin} walks the registration through its stages on a \emph{real} intra-operative frame (qualitative, class-b). The \emph{green} curve is the airway-lumen skeleton detected in the image (the observation); the \emph{red} curve is the projected CT centerline; \emph{yellow} marks matched bifurcations. Before registration red lies far off green; after FreeReg it hugs the lumen. Correctness = red overlapping green; the 2D centerline residual falls 232$\to$12.5\,px on this frame. (The 4.23\,mm TRE above is measured on the synthetic fly-through cohort, class-a.)
 
@@ -514,12 +514,12 @@ Per-case TRE (Table~\ref{tab:percase}) confirms the far-field lever law: model s
 \end{figure}
 
 \subsection{Rendering, SOTA comparison, and qualitative results}
-\begin{figure*}[!t]
+\begin{figure}[!tbp]
 \centering
-\includegraphics[width=\textwidth,height=0.038\textheight,keepaspectratio]{gal_clin_scared.png}
+\includegraphics[width=\columnwidth]{gal_clin_scared.png}
 \caption{AR fusion on SCARED real endoscopic video. Across viewpoints the registered virtual model (green) remains anchored to the tissue under partial occlusion, showing temporal-coherent, depth-aware fusion from the co-anchored renderer.}
 \label{fig:gal_scared}
-\end{figure*}
+\end{figure}
 Table~\ref{tab:render} summarizes the rendering evaluation. 3DGS reaches 47.4\,dB PSNR (train) / 42.5\,dB (held-out), SSIM 0.994, $\sim$142\,FPS at $640\times480$ with 4k Gaussians; 4D deformation-driven rendering improves +2.8\,dB over the static model under 12\,mm lateral deformation, as the co-anchored field warps the Gaussians with the tissue. Scene-graph multi-model compositing achieves 100\% occlusion-edge accuracy in a triple-occlusion scene.
 
 \begin{table}[t]
