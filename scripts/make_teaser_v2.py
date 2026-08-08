@@ -243,7 +243,7 @@ def arrow(d, x0, y0, x1, color=(60, 60, 60)):
 
 
 def main():
-    S = 300
+    S = 260
     # Build the 5 model->scene pairs (model already loaded per pair).
     mA, sA, idA = bop_pair(5, 215, S)
     mB, sB, idB = bop_pair(2, 243, S)
@@ -253,57 +253,41 @@ def main():
     sD = bronch_scene('endo_13400.png', S)
     mE, sE = scared_pair(S, 100)
 
+    # single row: model -> scene, bottom label reads "model → scene"
     groups = [
-        (mA, sA, f'BOP Linemod ({idA})'),
-        (mB, sB, f'BOP Linemod ({idB})'),
-        (mE, sE, 'SCARED  (endoscopy)'),
-        (mC, sC, 'CT airway  (bronch.)'),
-        (mD, sD, 'CT airway  (bronch.)'),
+        (mA, sA, 'driller \u2192 BOP RGB-D'),
+        (mB, sB, 'outlet \u2192 BOP RGB-D'),
+        (mE, sE, 'virtual duck \u2192 SCARED'),
+        (mC, sC, 'CT airway \u2192 bronchoscopy'),
+        (mD, sD, 'CT airway \u2192 bronchoscopy'),
     ]
-    # two rows: 3 groups top, 2 groups bottom
-    rows = [groups[:3], groups[3:]]
 
-    pad = 24
-    arrow_w = 58
-    group_gap = 40
-    top_lab = 44
+    pad = 14
+    arrow_w = 42
+    group_gap = 26
+    top_lab = 8
     group_w = S + arrow_w + S
-    row_h = S + top_lab + 54
-    row_gap = 26
-    ncols = max(len(r) for r in rows)
-    W = pad * 2 + group_w * ncols + group_gap * (ncols - 1)
-    H = pad + row_h * len(rows) + row_gap * (len(rows) - 1)
+    W = pad * 2 + group_w * len(groups) + group_gap * (len(groups) - 1)
+    H = S + top_lab + 62
     canvas = Image.new('RGB', (W, H), (255, 255, 255))
     d = ImageDraw.Draw(canvas)
 
-    y0 = pad
-    for row in rows:
-        # centre shorter rows
-        row_w = group_w * len(row) + group_gap * (len(row) - 1)
-        x = (W - row_w) // 2
-        ymid = y0 + top_lab + S // 2
-        for (mpim, spim, ttl) in row:
-            canvas.paste(mpim, (x, y0 + top_lab))
-            d.rectangle([x, y0 + top_lab, x + S, y0 + top_lab + S],
-                        outline=(205, 205, 205), width=2)
-            arrow(d, x + S + 5, ymid, x + S + arrow_w - 5)
-            xs = x + S + arrow_w
-            canvas.paste(spim, (xs, y0 + top_lab))
-            d.rectangle([xs, y0 + top_lab, xs + S, y0 + top_lab + S],
-                        outline=(205, 205, 205), width=2)
-            tw = d.textlength(ttl, font=_font(30, bold=True))
-            cxg = x + group_w / 2
-            d.text((cxg - tw / 2, y0 + top_lab + S + 10), ttl,
-                   fill=(25, 25, 25), font=_font(30, bold=True))
-            mw = d.textlength('3D model', font=_font(20, bold=False))
-            d.text((x + S / 2 - mw / 2, y0 + top_lab - 30), '3D model',
-                   fill=(110, 110, 110), font=_font(20, bold=False))
-            sw = d.textlength('registered overlay', font=_font(20, bold=False))
-            d.text((xs + S / 2 - sw / 2, y0 + top_lab - 30),
-                   'registered overlay', fill=(110, 110, 110),
-                   font=_font(20, bold=False))
-            x += group_w + group_gap
-        y0 += row_h + row_gap
+    x = pad
+    ymid = top_lab + S // 2
+    for (mpim, spim, ttl) in groups:
+        canvas.paste(mpim, (x, top_lab))
+        d.rectangle([x, top_lab, x + S, top_lab + S], outline=(205, 205, 205),
+                    width=2)
+        arrow(d, x + S + 4, ymid, x + S + arrow_w - 4)
+        xs = x + S + arrow_w
+        canvas.paste(spim, (xs, top_lab))
+        d.rectangle([xs, top_lab, xs + S, top_lab + S], outline=(205, 205, 205),
+                    width=2)
+        tw = d.textlength(ttl, font=_font(44, bold=True))
+        cxg = x + group_w / 2
+        d.text((cxg - tw / 2, top_lab + S + 12), ttl, fill=(20, 20, 20),
+               font=_font(44, bold=True))
+        x += group_w + group_gap
 
     OUT.parent.mkdir(parents=True, exist_ok=True)
     canvas.save(OUT)
