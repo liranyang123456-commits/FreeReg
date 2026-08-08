@@ -433,11 +433,11 @@ FP vs hybrid (same seq.) & 2.07 vs 10.67 & scene 1 $\times$ 200 \\
 \end{table}
 
 \subsection{Non-rigid registration and observability}
-Table~\ref{tab:nonrigid} reports RTW results. On smooth global warps RTW reduces the depth residual by 29\% versus rigid RT; on a local 8\,mm dent, by 31\%. The observability rank is confirmed at 151/648 (23\%); the observability-guided variant improves shape chamfer by 8\% at equal data fit. On the real-colon benchmark, end-to-end recovery reaches 1.1\% of model extent (versus 1.7\% rigid) on the converged frames; 52\% of frames exceed a 30$\degree$ rotation sentinel and are excluded as observationally ill-posed---single-view press--release deformation of featureless colon is the regime Theorem~\ref{thm:rank} predicts to be under-constrained, an observability limit rather than an optimizer failure. The dent family converges to a $\sim$30\% recovery ceiling under our observation configuration, an observational/sampling limit, not an algorithmic defect (Section~\ref{sec:disc}). Figure~\ref{fig:dent} visualizes this on a tubular model, where RTW reproduces the ground-truth arc that the rigid fit cannot express.
+Table~\ref{tab:nonrigid} reports RTW results. On smooth global warps RTW reduces the depth residual by 29\% versus rigid RT; on a local 8\,mm dent, by 31\%. The observability rank is confirmed at 151/648 (23\%); the observability-guided variant improves shape chamfer by 8\% at equal data fit. On the real-colon benchmark, RTW recovers deformation to 1.1\% of model extent (versus 1.7\% rigid) on the converged frames, at 10.0$\degree$ median rotation error. The remaining 52\% of frames diverge---in \emph{every} case from a 180$\degree$ symmetric flip of the monocular rigid initialization (all have rigid-init rotation error $>30\degree$), the exact degeneracy of the symmetry proposition: neither depth nor silhouette can tell apart the two ends of a near-cylindrical colon, and RTW never diverges from a non-flipped init. The bottleneck is the rigid-init symmetry ambiguity, which contour arbitration (Section~\ref{sec:engine}) and temporal tracking are designed to resolve. Figure~\ref{fig:dent} visualizes this on a tubular model, where RTW reproduces the ground-truth arc that the rigid fit cannot express.
 
 \begin{table}[t]
 \centering
-\caption{Non-rigid registration and observability. real\_colon: 52\% of frames exceed a 30$\degree$ rotation sentinel (ill-posed under single view) and are excluded from the statistic.}
+\caption{Non-rigid registration and observability. real\_colon: the 52\% diverged frames all stem from a 180$\degree$ symmetric flip of the monocular rigid init (the symmetry-proposition degeneracy); RTW never diverges from a non-flipped init.}
 \label{tab:nonrigid}
 \begin{tabular}{lllll}
 \toprule
@@ -447,7 +447,7 @@ Smooth warp & Depth res. & 2.61 & \textbf{1.85} & $-29\%$ \\
 Local dent & Dent rec. & 4.00 & \textbf{2.77} & $-31\%$ \\
 Observability & Obs. rank & --- & 151/648 & 23\% \\
 Guided vs full & Chamfer & --- & 0.78/0.85 & $-8\%$ \\
-real\_colon & E2E rec. & 1.7\% & \textbf{1.1\%} & 52\% div. \\
+real\_colon & E2E rec. & 1.7\% & \textbf{1.1\%} & 52\% flip \\
 \bottomrule
 \end{tabular}
 \end{table}
@@ -455,7 +455,7 @@ real\_colon & E2E rec. & 1.7\% & \textbf{1.1\%} & 52\% div. \\
 \begin{figure}[!tbp]
 \centering
 \includegraphics[width=\columnwidth]{fig6_dent.png}
-\caption{Non-rigid deformation recovery on a tubular airway/colon analog, visualized as projected surface points. Rows increase the bend amplitude (20/35/50\,mm). The rigid baseline (blue) remains straight; the ground truth (orange) bends into an arc; RTW (green) recovers that bend within the observable subspace. At 35 and 50\,mm, RTW reaches 6.05 and 8.28\,mm recovery error, respectively, versus 6.20 and 8.57\,mm for the rigid baseline.}
+\caption{Non-rigid deformation recovery on a tubular airway/colon analog (projected surface points). Rows increase bend amplitude (20/35/50\,mm). The rigid baseline (blue) stays straight; ground truth (orange) bends; RTW (green) recovers the bend within the observable subspace (recovery error at 50\,mm: 8.28 vs 8.57\,mm rigid).}
 \label{fig:dent}
 \end{figure}
 
@@ -597,7 +597,7 @@ Depth-Anything-V2 & depth corr. & 0.30 (unreliable) \\
 \end{tabular}
 \end{table}
 
-\textbf{Qualitative results.} Figures~\ref{fig:gal_ar}--\ref{fig:gal_scared} present qualitative results by dataset: Fig.~\ref{fig:gal_ar} shows BOP registration and AR fusion; Fig.~\ref{fig:gal_clin} shows CT-to-bronchoscopy registration on the clinical cohort; and Fig.~\ref{fig:gal_scared} shows temporally coherent AR fusion on SCARED real endoscopic video (virtual slate anchored under tissue occlusion).
+\textbf{Qualitative results.} Figures~\ref{fig:gal_ar}--\ref{fig:gal_scared} present qualitative results by dataset (BOP registration/AR, clinical CT-to-bronchoscopy, and temporally coherent SCARED AR fusion with a virtual slate anchored under tissue occlusion).
 
 %==============================================================================
 % DISCUSSION
