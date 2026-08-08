@@ -458,12 +458,12 @@ real\_colon & E2E rec. & 1.5\% & \textbf{1.1\%} & no diver. \\
 \end{figure}
 
 \subsection{Clinical registration (12 cases, 270 frames)}
-\begin{figure*}[!t]
+\begin{figure}[!t]
 \centering
-\includegraphics[height=0.13\textheight]{gal_clin_bronch.png}
+\includegraphics[width=0.88\columnwidth]{gal_clin_bronch.png}
 \caption{CT-to-bronchoscopy registration, stage-by-stage on a clinical Live-View frame (Section~\ref{sec:exp}). FreeReg registers by \emph{centerline correspondence} because depth-based ICP is unreliable in the tubular airway. \textbf{Green}: airway-lumen skeleton detected in the image (the observation); \textbf{red}: projected CT centerline; \textbf{yellow}: matched bifurcations. Before registration red lies off the green observation; after FreeReg it hugs it. Correctness = red overlapping green; the residual falls 232$\to$12.5\,px, at 4.23\,mm mean TRE (Table~\ref{tab:clinical}).}
 \label{fig:gal_clin}
-\end{figure*}
+\end{figure}
 TRE-NN mean 4.23\,mm / median 2.93\,mm; 92\% $<$10\,mm; Wilcoxon $p=4.4\times10^{-31}$ versus the filtered variant; 12--38\,ms/frame (30--80\,FPS). Failure cases (data quality) were excluded with documented reasons. Centerline correspondence registers $0.0\degree$/6.6\,mm inside the airway where depth ICP collapses (38.1\,mm). Smaller airway models yielded better TRE (2.2--2.4\,mm versus 8.4\,mm), confirming the far-field lever law (error $\propto$ model span). Table~\ref{tab:clinical} summarizes the cohort statistics.
 
 Fig.~\ref{fig:gal_clin} walks the registration through its stages and makes the correctness criterion explicit. The \emph{green} curve is the airway-lumen skeleton detected directly in the endoscopic image---the actual observation (where the airway really is in this view). The \emph{red} curve is the preoperative CT centerline projected into the image. Before registration (initial pose) the red centerline lies far off the green observation; after FreeReg it hugs the green lumen, with matched bifurcations in \emph{yellow}. Registration is correct when red overlaps green; the per-frame residual falls 232$\to$12.5\,px on the frame shown.

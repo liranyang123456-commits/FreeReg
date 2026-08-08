@@ -37,11 +37,11 @@ from make_centerline_endo_fig import extract_live_view, _align_rot, VIDEO, MASK_
 OUT_DIR = Path('outputs/ct/centerline')
 FIG_OUT = Path('outputs/paper/figs/gal_clin_bronch.png')
 
-FRAMES = [14800]          # one representative frame -> one clear row
-CELL = 340
-GAP = 8
-LEGEND_H = 52
-TITLE_H = 34
+FRAMES = [14800]          # one representative frame
+CELL = 250
+GAP = 5
+LEGEND_H = 42
+TITLE_H = 24   # in-cell top title bar height
 
 
 def _font(size, bold=True):
@@ -175,44 +175,50 @@ def main():
         raise RuntimeError('no rows produced')
 
     nstage = 4
+    # 2x2 grid: stages laid out row-major
+    #   [1. Live-View]      [2. detected lumen]
+    #   [3. before reg.]    [4. after FreeReg]
     titles = ['1. Live-View', '2. detected lumen',
               '3. before reg.', '4. after FreeReg']
-    W = nstage * CELL + (nstage - 1) * GAP
-    H = TITLE_H + len(rows) * CELL + (len(rows) - 1) * GAP + LEGEND_H
+    W = 2 * CELL + GAP
+    H = 2 * CELL + GAP + LEGEND_H
     canvas = Image.new('RGB', (W, H), (255, 255, 255))
     d = ImageDraw.Draw(canvas)
 
-    # stage titles
-    for c, ttl in enumerate(titles):
-        tw = d.textlength(ttl, font=_font(26, bold=True))
-        cx = c * (CELL + GAP) + CELL / 2
-        d.text((cx - tw / 2, 2), ttl, fill=(20, 20, 20), font=_font(26, bold=True))
-
-    y = TITLE_H
-    for cells, cham0, cham, fi in rows:
-        for c, cell in enumerate(cells):
-            rgb = cv2.cvtColor(cell, cv2.COLOR_BGR2RGB)
-            pil = Image.fromarray(rgb).resize((CELL, CELL), Image.LANCZOS)
-            canvas.paste(pil, (c * (CELL + GAP), y))
-        # annotate chamfer drop on the last cell
-        lab = f'centerline residual {cham0:.0f} -> {cham:.1f} px'
-        tw = d.textlength(lab, font=_font(20, bold=False))
-        d.text((W - tw - 8, y + 6), lab, fill=(255, 255, 255),
-               font=_font(20, bold=False))
-        y += CELL + GAP
+    cells, cham0, cham, fi = rows[0][0], rows[0][1], rows[0][2], rows[0][3]
+    for c, (cell, ttl) in enumerate(zip(cells, titles)):
+        r, cc = divmod(c, 2)
+        x = cc * (CELL + GAP)
+        y = r * (CELL + GAP)
+        rgb = cv2.cvtColor(cell, cv2.COLOR_BGR2RGB)
+        pil = Image.fromarray(rgb).resize((CELL, CELL), Image.LANCZOS)
+        canvas.paste(pil, (x, y))
+        # in-cell top title bar (semi-transparent white)
+        d.rectangle([x, y, x + CELL, y + TITLE_H], fill=(255, 255, 255))
+        tw = d.textlength(ttl, font=_font(24, bold=True))
+        d.text((x + CELL / 2 - tw / 2, y + 2), ttl, fill=(15, 15, 15),
+               font=_font(24, bold=True))
+    # residual annotation on the 'after' cell
+    lab = f'residual {cham0:.0f} -> {cham:.1f} px'
+    tw = d.textlength(lab, font=_font(20, bold=False))
+    d.rectangle([W - tw - 16, 2 * (CELL + GAP) - 30, W - 2,
+                 2 * (CELL + GAP) - 4], fill=(255, 255, 255))
+    d.text((W - tw - 10, 2 * (CELL + GAP) - 30), lab, fill=(180, 0, 0),
+           font=_font(20, bold=False))
 
     # legend
-    ly = H - LEGEND_H + 12
-    x = 10
-    for rgb, lab in [((0, 200, 0), 'observed lumen skeleton (image)'),
+    ly = H - LEGEND_H + 6
+    x = 4
+    for rgb, lab in [((0, 180, 0), 'observed lumen skeleton'),
                      ((220, 0, 0), 'projected CT centerline'),
-                     ((230, 220, 0), 'matched bifurcation')]:
-        chip(d, x, ly, rgb, lab)
-        x += 34 + d.textlength(lab, font=_font(24, bold=False)) + 40
+                     ((200, 190, 0), 'matched bifurcation')]:
+        d.rectangle([x, ly + 4, x + 22, ly + 20], fill=rgb)
+        d.text((x + 28, ly), lab, fill=(30, 30, 30), font=_font(21, bold=False))
+        x += 28 + d.textlength(lab, font=_font(21, bold=False)) + 26
 
     FIG_OUT.parent.mkdir(parents=True, exist_ok=True)
     canvas.save(FIG_OUT)
-    print(f'wrote {FIG_OUT} size={canvas.size}')
+    print(f'wrote {FIG_OUT} size={canvas.size} ratio={canvas.size[0]/canvas.size[1]:.2f}')
 
 
 if __name__ == '__main__':
