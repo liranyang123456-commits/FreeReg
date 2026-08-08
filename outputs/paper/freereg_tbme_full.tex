@@ -259,7 +259,7 @@ with $\mathbf{R}$ the measurement covariance and $\mathbf{H}$ the innovation Jac
 %==============================================================================
 \subsection{Co-anchored registration, rendering, and scene graph}\label{sec:render}
 
-\textbf{Co-anchored registration and differentiable rendering.} One FFD anchor field $W$ parameterizes \emph{both} the RTW warp~\eqref{eq:ffd} and the deformation of a 3D Gaussian Splatting model: the Gaussian means are warped by $W$ while their covariances are frozen under the small-deformation assumption. This co-anchoring is the key design: the renderer's photometric residual is then an \emph{online, label-free validation signal} for the registration, because a misregistered or mis-deformed model renders with photometric error. We implement a vectorized, differentiable EWA splatter~\cite{kerbl20233dgs} with exact front-to-back alpha compositing, $\hat{\mathbf{I}}=\sum_{k}T_{k}\alpha_{k}\mathbf{c}_{k}$ with $T_{k}=\prod_{j<k}(1-\alpha_{j})$ the transmittance, computed by a segmented float64 cumulative sum of $\log(1-\alpha)$ for numerical stability. The renderer reaches 46.3\,dB PSNR at 112\,FPS at object scale.
+\textbf{Co-anchored registration and differentiable rendering.} One FFD anchor field $W$ parameterizes \emph{both} the RTW warp~\eqref{eq:ffd} and the deformation of a 3D Gaussian Splatting model: the Gaussian means are warped by $W$ while their covariances are frozen under the small-deformation assumption. This co-anchoring is the key design: the renderer's photometric residual is then an \emph{online, label-free validation signal} for the registration, because a misregistered or mis-deformed model renders with photometric error. We implement a vectorized, differentiable EWA splatter~\cite{kerbl20233dgs} with exact front-to-back alpha compositing, $\hat{\mathbf{I}}=\sum_{k}T_{k}\alpha_{k}\mathbf{c}_{k}$ with $T_{k}=\prod_{j<k}(1-\alpha_{j})$ the transmittance, computed by a segmented float64 cumulative sum of $\log(1-\alpha)$ for numerical stability. The renderer reaches 47.4\,dB PSNR at 142\,FPS at object scale.
 
 \textbf{Scene graph and endoscopic centerline.} For multi-model scenes we maintain a scene graph whose nodes are registered models and whose edges encode occlusion relations; depth-aware compositing resolves which model is in front at each pixel, achieving 100\% occlusion-edge accuracy in a triple-occlusion test scene. For monocular endoscopy, where texture and depth are unreliable, we register a 3D skeletonized CT airway centerline to the 2D skeleton of the frame's lumen-dark region by minimizing the distance-transform chamfer of the projected centerline, with junction weighting and view-frustum cropping. This structural correspondence registers $0.0\degree$/6.6\,mm inside the airway where depth ICP collapses (38.1\,mm), providing the viable path when depth is unavailable.
 
@@ -319,7 +319,7 @@ Primitive & Metric & Result \\
 SE(3)/SO(3) exp--log & round-trip error & $6.7\times10^{-16}$ \\
 PnP (known pose) & rot / px error & $0.111\degree$ / 0.05\,px \\
 Umeyama (known scale) & scale error & 0.00\% \\
-Multi-start ICP & rot error & $0.26\degree$ \\
+Multi-start ICP & rot error & $0.18\degree$ \\
 Manifold Kalman & jitter reduction & $-56.6\%$ \\
 Rasterizer z-buffer & occlusion logic & exact \\
 RTW vs RT (synthetic) & residual reduction & $-44.5\%$ \\
@@ -327,7 +327,7 @@ RTW vs RT (synthetic) & residual reduction & $-44.5\%$ \\
 \end{tabular}
 \end{table}
 
-\textbf{Runtime.} Table~\ref{tab:runtime} breaks down the per-frame cost. The single-shot correspondence engine (hypothesis generation + arbitration + trimmed ICP) dominates at 1.44\,s, while tracking mode (warm-started) drops to 35\,ms; the manifold Kalman update and observability-guided RTW are sub-millisecond-to-millisecond; and the 3DGS renderer sustains 112\,FPS. The clinical path, which bypasses the heavy correspondence engine in favor of centerline correspondence + tracking, reaches 30--80\,FPS end-to-end, within the endoscopy hardware budget. The engine's interface-isomorphism with FoundationPose means a learned front end can replace the hand-built correspondence without changing the rest of the pipeline.
+\textbf{Runtime.} Table~\ref{tab:runtime} breaks down the per-frame cost. The single-shot correspondence engine (hypothesis generation + arbitration + trimmed ICP) dominates at 1.44\,s, while tracking mode (warm-started) drops to 35\,ms; the manifold Kalman update and observability-guided RTW are sub-millisecond-to-millisecond; and the 3DGS renderer sustains 142\,FPS. The clinical path, which bypasses the heavy correspondence engine in favor of centerline correspondence + tracking, reaches 30--80\,FPS end-to-end, within the endoscopy hardware budget. The engine's interface-isomorphism with FoundationPose means a learned front end can replace the hand-built correspondence without changing the rest of the pipeline.
 
 \begin{table}[t]
 \centering
@@ -341,7 +341,7 @@ Correspondence + arbitration (single-shot) & 1.44\,s \\
 Correspondence (tracking mode) & 35\,ms \\
 Manifold Kalman update & $<$1\,ms \\
 Observability-guided RTW & ms \\
-3DGS render (4k, $640\times480$) & 8.9\,ms (112\,FPS) \\
+3DGS render (4k, $640\times480$) & 7.0\,ms (142\,FPS) \\
 Clinical path (end-to-end) & 12--38\,ms (30--80\,FPS) \\
 \bottomrule
 \end{tabular}
@@ -424,8 +424,8 @@ Table~\ref{tab:temporal} reports pixel-jitter deviation before and after the gat
 \toprule
 Setting & Jitter & Condition \\
 \midrule
-Controlled trajectory & 6.40$\to$2.59 ($-59.6\%$) & $\sigma$=5\,mm/3\,mrad \\
-End-to-end virtual video & 0.94$\to$0.67 ($-28.8\%$) & 35\,ms/frame \\
+Controlled trajectory & 6.59$\to$2.66 ($-59.6\%$) & $\sigma$=5\,mm/3\,mrad \\
+End-to-end virtual video & 1.25$\to$0.83 ($-33.7\%$) & 35\,ms/frame \\
 SCARED real video & 29.5$\to$19.3 ($-34.5\%$) & VIO noise, 0 reloc. \\
 FP vs hybrid (same seq.) & 2.07 vs 10.67 & scene 1 $\times$ 200 \\
 \bottomrule
@@ -521,7 +521,7 @@ Per-case TRE (Table~\ref{tab:percase}) confirms the far-field lever law quantita
 \caption{AR fusion on SCARED real endoscopic video. Across viewpoints the registered virtual model (green) remains anchored to the tissue under partial occlusion, showing temporal-coherent, depth-aware fusion from the co-anchored renderer.}
 \label{fig:gal_scared}
 \end{figure*}
-Table~\ref{tab:render} summarizes the rendering evaluation. 3DGS reaches 46.3\,dB PSNR (train) / 42.4\,dB (held-out), SSIM 0.992, $\sim$112\,FPS at $640\times480$ with 4k Gaussians; 4D deformation-driven rendering improves +2.6\,dB over the static model under 12\,mm lateral deformation, because the co-anchored field warps the Gaussians with the tissue. Scene-graph multi-model compositing achieves 100\% occlusion-edge accuracy in a triple-occlusion scene. Figure~\ref{fig:render} shows novel-view rendering fidelity, and Figure~\ref{fig:scene} the multi-model occlusion.
+Table~\ref{tab:render} summarizes the rendering evaluation. 3DGS reaches 47.4\,dB PSNR (train) / 42.5\,dB (held-out), SSIM 0.994, $\sim$142\,FPS at $640\times480$ with 4k Gaussians; 4D deformation-driven rendering improves +2.8\,dB over the static model under 12\,mm lateral deformation, because the co-anchored field warps the Gaussians with the tissue. Scene-graph multi-model compositing achieves 100\% occlusion-edge accuracy in a triple-occlusion scene. Figure~\ref{fig:render} shows novel-view rendering fidelity, and Figure~\ref{fig:scene} the multi-model occlusion.
 
 \begin{table}[t]
 \centering
@@ -531,10 +531,10 @@ Table~\ref{tab:render} summarizes the rendering evaluation. 3DGS reaches 46.3\,d
 \toprule
 Metric & Static 3DGS & 4D (deformed) \\
 \midrule
-PSNR (train, dB) & 46.3 & $+2.6$ \\
-PSNR (held-out, dB) & 42.4 & --- \\
-SSIM & 0.992 & --- \\
-FPS ($640\times480$, 4k) & 112 & 112 \\
+PSNR (train, dB) & 47.4 & $+2.8$ \\
+PSNR (held-out, dB) & 42.5 & --- \\
+SSIM & 0.994 & --- \\
+FPS ($640\times480$, 4k) & 142 & 142 \\
 Occlusion-edge accuracy & 100\% & 100\% \\
 \bottomrule
 \end{tabular}
