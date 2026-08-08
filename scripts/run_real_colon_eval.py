@@ -98,7 +98,8 @@ def eval_scene(sdir, device, frames=(2, 5, 7), seed=0):
             continue
         depth[fg] += rng.normal(0, extent * 0.01, int(fg.sum()))
 
-        # ---- 刚性注册 (逐帧独立: 多起点ICP, 不依赖参考帧位姿) ----
+        # ---- 刚性注册 (逐帧独立: 多起点ICP; 近圆柱对称管的轴向翻转对深度与
+        # 轮廓均不可辨识, 为 §3.1 symmetry 命题的极端情形, 不做伪仲裁) ----
         scene_pts, _, _ = backproject_depth(depth, K, mask=fg)
         t0 = time.time()
         T_est, st = multistart_icp_register(base_surf, scene_pts,
@@ -109,7 +110,7 @@ def eval_scene(sdir, device, frames=(2, 5, 7), seed=0):
         rtw = rtw_optimize_projective(base_surf, depth, K, T_est,
                                       grid=(4, 4, 4), iters=300, lr=3e-3,
                                       lambda_mag=0.5, lambda_sm=0.2,
-                                      lambda_p2p=1.0,
+                                      lambda_p2p=1.0, lambda_pose=1.0,
                                       inlier_hi=0.10 * extent,
                                       inlier_lo=0.03 * extent,
                                       device=device, seed=seed)
