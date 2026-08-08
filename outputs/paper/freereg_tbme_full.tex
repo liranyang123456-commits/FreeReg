@@ -347,6 +347,12 @@ Clinical path (end-to-end) & 12--38\,ms (30--80\,FPS) \\
 \end{table}
 
 \subsection{Rigid registration on BOP}
+\begin{figure*}[!t]
+\centering
+\includegraphics[width=\textwidth,height=0.09\textheight,keepaspectratio]{gal_ar.png}
+\caption{Registration and AR fusion on BOP Linemod across seven objects and scenes. Each panel shows the live RGB frame with the registered model's projected silhouette (green contour and fill) and coordinate axes overlaid, aligning with the true object under viewpoint change and occlusion (Table~\ref{tab:bop}).}
+\label{fig:gal_ar}
+\end{figure*}
 Table~\ref{tab:bop} reports single-frame registration on BOP Linemod. The hybrid engine (SIFT+FPFH+multi-start+contour) matches the geometric dual engine on ADD-S (1.000) and improves ADD AR@20\%d from 0.688 to 0.784, reaching a BOP-protocol AR of 0.848 (comparable to FoundationPose's published 0.847) at 1.44\,s/frame; Figure~\ref{fig:gal_ar} shows registration overlays across scenes and objects.
 
 \begin{table}[t]
@@ -452,6 +458,12 @@ real\_colon & E2E rec. & 1.5\% & \textbf{1.1\%} & no diver. \\
 \end{figure}
 
 \subsection{Clinical registration (12 cases, 270 frames)}
+\begin{figure*}[!t]
+\centering
+\includegraphics[width=\textwidth,height=0.11\textheight,keepaspectratio]{gal_clin_bronch.png}
+\caption{CT-to-bronchoscopy registration on the clinical cohort. Each panel is a pure endoscopic Live-View crop with FreeReg centerline correspondence (green lumen skeleton; red projected CT centerline; yellow bifurcations), spanning diverse airway depths and bifurcations where depth-based ICP is unreliable, at 4.23\,mm mean TRE (Table~\ref{tab:clinical}).}
+\label{fig:gal_clin}
+\end{figure*}
 TRE-NN mean 4.23\,mm / median 2.93\,mm; 92\% $<$10\,mm; Wilcoxon $p=4.4\times10^{-31}$ versus the filtered variant; 12--38\,ms/frame (30--80\,FPS). Failure cases (data quality) were excluded with documented reasons. Centerline correspondence registers $0.0\degree$/6.6\,mm inside the airway where depth ICP collapses (38.1\,mm). Smaller airway models yielded better TRE (2.2--2.4\,mm versus 8.4\,mm), confirming the far-field lever law (error $\propto$ model span). Table~\ref{tab:clinical} summarizes the cohort statistics; Fig.~\ref{fig:gal_clin} shows the overlay and centerline correspondence.
 
 \begin{table}[t]
@@ -501,6 +513,12 @@ Per-case TRE (Table~\ref{tab:percase}) confirms the far-field lever law quantita
 \end{figure}
 
 \subsection{Rendering, SOTA comparison, and qualitative results}
+\begin{figure*}[!t]
+\centering
+\includegraphics[width=\textwidth,height=0.09\textheight,keepaspectratio]{gal_clin_scared.png}
+\caption{AR fusion on SCARED real endoscopic video. Across viewpoints the registered virtual model (green) remains anchored to the tissue under partial occlusion, showing temporal-coherent, depth-aware fusion from the co-anchored renderer.}
+\label{fig:gal_scared}
+\end{figure*}
 Table~\ref{tab:render} summarizes the rendering evaluation. 3DGS reaches 46.3\,dB PSNR (train) / 42.4\,dB (held-out), SSIM 0.992, $\sim$112\,FPS at $640\times480$ with 4k Gaussians; 4D deformation-driven rendering improves +2.6\,dB over the static model under 12\,mm lateral deformation, because the co-anchored field warps the Gaussians with the tissue rather than re-fitting them. Scene-graph multi-model compositing achieves 100\% occlusion-edge accuracy in a triple-occlusion scene. Figure~\ref{fig:render} shows novel-view rendering fidelity, and Figure~\ref{fig:scene} the multi-model occlusion.
 
 \begin{table}[t]
@@ -577,28 +595,6 @@ Depth-Anything-V2 & depth corr. & 0.30 (unreliable) \\
 \end{table}
 
 \textbf{Qualitative results.} Figures~\ref{fig:gal_ar}--\ref{fig:gal_scared} present qualitative results by dataset: Fig.~\ref{fig:gal_ar} shows BOP registration and AR fusion; Fig.~\ref{fig:gal_clin} shows CT-to-bronchoscopy registration on the clinical cohort; and Fig.~\ref{fig:gal_scared} shows temporally coherent AR fusion on SCARED real endoscopic video (virtual slate anchored under tissue occlusion).
-
-\begin{figure*}[!tbp]
-\centering
-\includegraphics[width=\textwidth,height=0.09\textheight,keepaspectratio]{gal_ar.png}
-\caption{Registration and AR fusion on BOP Linemod across seven objects and scenes. Each panel shows the live RGB frame with the registered model's projected silhouette (green contour and fill) and coordinate axes overlaid, aligning with the true object under viewpoint change and occlusion (Table~\ref{tab:bop}).}
-
-\label{fig:gal_ar}
-\end{figure*}
-
-\begin{figure*}[!tbp]
-\centering
-\includegraphics[width=\textwidth,height=0.11\textheight,keepaspectratio]{gal_clin_bronch.png}
-\caption{CT-to-bronchoscopy registration on the clinical cohort. Each panel is a pure endoscopic Live-View crop with FreeReg centerline correspondence (green lumen skeleton; red projected CT centerline; yellow bifurcations), spanning diverse airway depths and bifurcations where depth-based ICP is unreliable, at 4.23\,mm mean TRE (Table~\ref{tab:clinical}).}
-\label{fig:gal_clin}
-\end{figure*}
-
-\begin{figure*}[!tbp]
-\centering
-\includegraphics[width=\textwidth,height=0.09\textheight,keepaspectratio]{gal_clin_scared.png}
-\caption{AR fusion on SCARED real endoscopic video. Across viewpoints the registered virtual model (green) remains anchored to the tissue under partial occlusion, showing temporal-coherent, depth-aware fusion from the co-anchored renderer.}
-\label{fig:gal_scared}
-\end{figure*}
 
 %==============================================================================
 % DISCUSSION
