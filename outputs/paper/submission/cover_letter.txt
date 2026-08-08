@@ -1,0 +1,62 @@
+Cover Letter — IEEE Transactions on Medical Imaging
+
+Dear Editor-in-Chief and Editorial Board,
+
+We submit our manuscript entitled "FreeReg: Free-Coordinate Registration of
+Arbitrary 3D Models to Arbitrary Image Streams for Augmented and Mixed Reality"
+for consideration in IEEE Transactions on Medical Imaging.
+
+PROBLEM AND MOTIVATION
+Augmented and mixed reality require registering an arbitrary 3D model, given in
+its own coordinates, onto an arbitrary image or video stream. The classical
+calibrate-then-align pipeline assumes a calibrated camera, a rigid target, and
+independent per-frame poses — assumptions that fail under uncalibrated optics,
+tissue deformation, and temporal jitter, all of which are the norm in
+image-guided intervention.
+
+CONTRIBUTIONS
+We formulate registration as free-coordinate estimation of the projection
+mapping among model, camera, and pixel frames, with intrinsics, depth, rigid
+pose, and deformation each optional and degradable. FreeReg combines:
+  (i) a multi-source correspondence engine with contour-gated arbitration;
+ (ii) an observability-guided rigid-plus-warp estimator that deforms only
+      within the spectrally observable subspace of the single-view
+      depth-residual operator (rank-deficient to 23%);
+(iii) a manifold SE(3) Kalman filter with innovation gating; and
+ (iv) a co-anchored registration-rendering field whose photometric residual
+      provides online, label-free validation.
+
+We validate one and the same engine across five domains — rigid CAD (BOP
+Linemod/T-LESS), deformable tissue (real-colon FEM), and clinical
+CT-to-bronchoscopy and SCARED endoscopy — matching or exceeding SOTA where they
+apply (BOP AR 0.848 vs FoundationPose 0.847; T-LESS ADD-S 0.921) and remaining
+correct where general-purpose methods collapse out-of-distribution (on clinical
+endoscopy FoundationPose reaches 104 mm and Endo3R 34 mm, while FreeReg reaches
+4.23 mm mean TRE at 30-80 FPS, within the accuracy range of electromagnetic
+navigation without external tracking hardware). The observability analysis gives
+explicit reliability limits and shows a second view nearly doubles the
+recoverable subspace (23% to 41%).
+
+RELEVANCE TO IEEE TMI
+Image-guided intervention is a central TMI topic, and registration is its
+recognized bottleneck. FreeReg targets camera-only, calibration-free
+registration for bronchoscopy and endoscopy — directly addressing the accuracy
+and robustness limits that prior reviews identify as blocking clinical adoption
+of surgical AR — while its free-coordinate formulation and observability
+analysis are of broad methodological interest to the medical-imaging community.
+
+STATEMENTS
+This manuscript is original, has not been published before, and is not under
+consideration by any other journal. All authors have read and approved the
+submission. The clinical data are de-identified and used under the institutional
+data-governance process of Henan Provincial People's Hospital (see Ethics
+Statement). The full pipeline and evaluation scripts are released at
+https://github.com/liranyang123456-commits/FreeReg for reproducibility.
+
+We hope you find our work suitable for IEEE TMI and look forward to your
+response.
+
+Sincerely,
+Ranyang Li (corresponding author), on behalf of all authors
+School of Artificial Intelligence and Big Data, Henan University of Technology
+lry@haut.edu.cn

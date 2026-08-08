@@ -1,0 +1,9 @@
+Highlights — IEEE Transactions on Medical Imaging
+(FreeReg: Free-Coordinate Registration of Arbitrary 3D Models to Arbitrary Image
+Streams for Augmented and Mixed Reality)
+
+- Free-coordinate AR/MR registration of arbitrary 3D models onto arbitrary image streams.
+- Observability-guided non-rigid registration within the provably observable subspace.
+- 4.23 mm error at 30-80 FPS on clinical bronchoscopy, no external tracking hardware.
+- Matches rigid-pose SOTA yet stays correct where SOTA collapses in endoscopy.
+- A second view nearly doubles the observable deformation subspace (23% to 41%).
