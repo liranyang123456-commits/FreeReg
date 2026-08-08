@@ -109,30 +109,48 @@ def main():
     import matplotlib
     matplotlib.use('Agg')
     import matplotlib.pyplot as plt
+    from matplotlib.gridspec import GridSpec
     cols = ['Rigid (no warp)', 'Ground-truth deformed', 'RTW recovered']
     cc = ['#3773d2', '#e07023', '#23af55']
-    fig, axes = plt.subplots(len(FRAMES), 3, figsize=(8.6, 4.6))
-    if len(FRAMES) == 1:
-        axes = axes[None, :]
+    fig = plt.figure(figsize=(9.6, 4.3))
+    gs = GridSpec(2, 4, figure=fig, width_ratios=[1, 1, 1, 1.25],
+                  hspace=0.25, wspace=0.15)
+    axes = [[fig.add_subplot(gs[i, j]) for j in range(3)] for i in range(2)]
+    ax_curve = fig.add_subplot(gs[:, 3])
     for j, name in enumerate(cols):
-        axes[0, j].set_title(name, fontsize=12, color=cc[j])
+        axes[0][j].set_title(name, fontsize=11, color=cc[j])
     for i, (scene, t) in enumerate(FRAMES):
         r = eval_frame(scene, t, device)
         print(f'{scene} t{t}: rec_base={r["rec_base"]:.2f}%  '
               f'rec_rtw={r["rec_rtw"]:.2f}%')
         for j, key in enumerate(['base', 'gt', 'rtw']):
             uv = proj2d(r[key])
-            ax = axes[i, j]
+            ax = axes[i][j]
             ax.scatter(uv[:, 0], uv[:, 1], s=2, c=cc[j])
             ax.invert_yaxis(); ax.set_aspect('equal'); ax.axis('off')
             if j == 0:
-                ax.set_ylabel(f'{scene[-2:]}·t{t}', fontsize=11)
+                ax.set_ylabel(f'{scene[-2:]}·t{t}', fontsize=10)
             if key == 'rtw':
                 ax.set_xlabel(f'{r["rec_rtw"]:.2f}% vs rigid {r["rec_base"]:.2f}%',
-                              fontsize=9)
-    fig.suptitle('Non-rigid recovery on real-colon FEM (single view)', fontsize=12)
-    fig.tight_layout(rect=(0, 0, 1, 0.94))
-    fig.savefig(OUT / 'fig6_dent.png', dpi=200)
+                              fontsize=8)
+    # 右列: observability 梯度曲线
+    import pandas as pd
+    oc = pd.read_csv('outputs/observability/observability_curve.csv')
+    ax_curve.plot(oc.theta_deg, oc.rec_deform_pct, 'o-', color='#23af55',
+                  lw=2, ms=5, label='deformation recovery')
+    ax_curve.plot(oc.theta_deg, oc.rec_nn_pct, 's--', color='#3773d2',
+                  lw=1.5, ms=4, label='surface-error reduction')
+    ax_curve.axhline(0, color='#888', lw=0.8, ls=':')
+    ax_curve.set_xlabel('unobservable fraction (deg)', fontsize=9)
+    ax_curve.set_ylabel('recovery / reduction (%)', fontsize=9)
+    ax_curve.set_title('recovery vs observability', fontsize=10)
+    ax_curve.legend(fontsize=7, loc='upper right')
+    ax_curve.grid(alpha=0.3)
+    for lab in ax_curve.get_xticklabels() + ax_curve.get_yticklabels():
+        lab.set_fontsize(8)
+    fig.suptitle('Non-rigid recovery on real-colon FEM (single view)  +  '
+                 'observability limit', fontsize=12)
+    fig.savefig(OUT / 'fig6_dent.png', dpi=200, bbox_inches='tight')
     print('saved ->', OUT / 'fig6_dent.png')
 
 
