@@ -112,11 +112,10 @@ def main():
     from matplotlib.gridspec import GridSpec
     cols = ['Rigid (no warp)', 'Ground-truth deformed', 'RTW recovered']
     cc = ['#3773d2', '#e07023', '#23af55']
-    fig = plt.figure(figsize=(9.6, 4.3))
+    fig = plt.figure(figsize=(9.6, 3.9))
     gs = GridSpec(2, 4, figure=fig, width_ratios=[1, 1, 1, 1.25],
                   hspace=0.25, wspace=0.15)
     axes = [[fig.add_subplot(gs[i, j]) for j in range(3)] for i in range(2)]
-    ax_curve = fig.add_subplot(gs[:, 3])
     for j, name in enumerate(cols):
         axes[0][j].set_title(name, fontsize=11, color=cc[j])
     for i, (scene, t) in enumerate(FRAMES):
@@ -133,23 +132,35 @@ def main():
             if key == 'rtw':
                 ax.set_xlabel(f'{r["rec_rtw"]:.2f}% vs rigid {r["rec_base"]:.2f}%',
                               fontsize=8)
-    # 右列: observability 梯度曲线
+    # 右列上: observability 梯度曲线; 右列下: stereo/多视角提升
     import pandas as pd
+    ax_obs = fig.add_subplot(gs[0, 3])
     oc = pd.read_csv('outputs/observability/observability_curve.csv')
-    ax_curve.plot(oc.theta_deg, oc.rec_deform_pct, 'o-', color='#23af55',
-                  lw=2, ms=5, label='deformation recovery')
-    ax_curve.plot(oc.theta_deg, oc.rec_nn_pct, 's--', color='#3773d2',
-                  lw=1.5, ms=4, label='surface-error reduction')
-    ax_curve.axhline(0, color='#888', lw=0.8, ls=':')
-    ax_curve.set_xlabel('unobservable fraction (deg)', fontsize=9)
-    ax_curve.set_ylabel('recovery / reduction (%)', fontsize=9)
-    ax_curve.set_title('recovery vs observability', fontsize=10)
-    ax_curve.legend(fontsize=7, loc='upper right')
-    ax_curve.grid(alpha=0.3)
-    for lab in ax_curve.get_xticklabels() + ax_curve.get_yticklabels():
-        lab.set_fontsize(8)
-    fig.suptitle('Non-rigid recovery on real-colon FEM (single view)  +  '
-                 'observability limit', fontsize=12)
+    ax_obs.plot(oc.theta_deg, oc.rec_deform_pct, 'o-', color='#23af55',
+                lw=1.6, ms=4)
+    ax_obs.axhline(0, color='#888', lw=0.7, ls=':')
+    ax_obs.set_title('recovery vs unobservable frac', fontsize=9)
+    ax_obs.set_xlabel('unobservable (deg)', fontsize=8)
+    ax_obs.set_ylabel('recovery (%)', fontsize=8)
+    ax_obs.grid(alpha=0.3)
+
+    ax_st = fig.add_subplot(gs[1, 3])
+    sr = pd.read_csv('outputs/observability/stereo_recovery.csv')
+    ax_st.plot(sr.n_views, sr.rank_pct, 'o-', color='#3773d2', lw=1.6, ms=4,
+               label='observable rank')
+    ax_st.plot(sr.n_views, sr.recovery_pct, 's--', color='#e07023', lw=1.6,
+               ms=4, label='recoverable deform')
+    ax_st.set_title('stereo / multi-view lift', fontsize=9)
+    ax_st.set_xlabel('number of views', fontsize=8)
+    ax_st.set_ylabel('%', fontsize=8)
+    ax_st.set_xticks(list(sr.n_views))
+    ax_st.legend(fontsize=6, loc='center right')
+    ax_st.grid(alpha=0.3)
+    for a in (ax_obs, ax_st):
+        for lab in a.get_xticklabels() + a.get_yticklabels():
+            lab.set_fontsize(7)
+    fig.suptitle('Non-rigid recovery + observability: single-view limit and '
+                 'the stereo upgrade', fontsize=12)
     fig.savefig(OUT / 'fig6_dent.png', dpi=200, bbox_inches='tight')
     print('saved ->', OUT / 'fig6_dent.png')
 
