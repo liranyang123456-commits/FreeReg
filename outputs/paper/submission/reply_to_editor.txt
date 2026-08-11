@@ -2,32 +2,23 @@ Reply to the Editorial Office — IEEE Transactions on Medical Imaging
 
 Dear Editor-in-Chief,
 
-Thank you for bringing this to our attention, and we sincerely apologize for the
-error in our cover letter.
+Thank you for pointing this out, and we sincerely apologize for the error.
 
-The incorrect journal address was an inadvertent oversight on our part. The cover
-letter text was carried over from an earlier draft prepared during the
-manuscript's development, and we regret that the journal name and salutation were
-not fully updated before we uploaded the materials. This was purely an editorial
-oversight in the cover letter and does not reflect the content or the intended
-venue of the manuscript.
+The wrong journal address in the cover letter resulted from a template carried
+over from an earlier draft of the manuscript; the journal name was simply not
+updated before upload. This was an editorial oversight in the cover letter only
+and does not reflect the content or the intended venue of the manuscript, which
+was prepared specifically for IEEE Transactions on Medical Imaging.
 
-We would like to clarify the following:
+We confirm that this manuscript has been submitted solely to IEEE Transactions
+on Medical Imaging and is not, and has not been, under consideration by any
+other journal; there is no duplicate submission.
 
-1. The manuscript was prepared specifically for IEEE Transactions on Medical
-   Imaging. Its contribution -- camera-only, calibration-free registration of a
-   3D model to an endoscopic/bronchoscopic view for AR-guided intervention -- is
-   directed at the medical-imaging community and squarely within TMI's scope.
+We have corrected the cover letter, re-checked the full submission against the
+TMI submission checklist, and fixed all issues; the corrected materials have
+been uploaded to the system.
 
-2. The manuscript is submitted solely to IEEE Transactions on Medical Imaging
-   and is not, and has not been, under consideration by any other journal.
-
-3. We have corrected the cover letter so that it now properly addresses IEEE
-   Transactions on Medical Imaging, and we have re-checked the full submission
-   against the TMI submission checklist to ensure compliance.
-
-We apologize for any confusion this may have caused and appreciate your
-understanding. We hope the corrected submission can now proceed to peer review.
+Thank you again for your understanding and consideration.
 
 Sincerely,
 Ranyang Li (corresponding author), on behalf of all authors
