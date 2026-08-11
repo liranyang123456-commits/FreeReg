@@ -1,0 +1,35 @@
+Reply to the Editorial Office — IEEE Transactions on Medical Imaging
+
+Dear Editor-in-Chief,
+
+Thank you for bringing this to our attention, and we sincerely apologize for the
+error in our cover letter.
+
+The incorrect journal address was an inadvertent oversight on our part. The cover
+letter text was carried over from an earlier draft prepared during the
+manuscript's development, and we regret that the journal name and salutation were
+not fully updated before we uploaded the materials. This was purely an editorial
+oversight in the cover letter and does not reflect the content or the intended
+venue of the manuscript.
+
+We would like to clarify the following:
+
+1. The manuscript was prepared specifically for IEEE Transactions on Medical
+   Imaging. Its contribution -- camera-only, calibration-free registration of a
+   3D model to an endoscopic/bronchoscopic view for AR-guided intervention -- is
+   directed at the medical-imaging community and squarely within TMI's scope.
+
+2. The manuscript is submitted solely to IEEE Transactions on Medical Imaging
+   and is not, and has not been, under consideration by any other journal.
+
+3. We have corrected the cover letter so that it now properly addresses IEEE
+   Transactions on Medical Imaging, and we have re-checked the full submission
+   against the TMI submission checklist to ensure compliance.
+
+We apologize for any confusion this may have caused and appreciate your
+understanding. We hope the corrected submission can now proceed to peer review.
+
+Sincerely,
+Ranyang Li (corresponding author), on behalf of all authors
+School of Artificial Intelligence and Big Data, Henan University of Technology
+lry@haut.edu.cn
