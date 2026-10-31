@@ -17,6 +17,8 @@ RTW 非刚性注册评测 (真实 CAD 模型 + 合成形变)
     conda activate py3d
     python scripts/run_rtw_eval.py
 """
+import csv
+import json
 import os
 os.environ.setdefault('KMP_DUPLICATE_LIB_OK', 'TRUE')
 
@@ -40,6 +42,18 @@ from src.metrics import pose_errors
 import torch
 
 BOP_MODEL = Path(r'D:\bop\lm\models\obj_000008.ply')  # driller, 非对称
+OUT = Path('outputs/rtw_controlled')
+RECORDS = []
+
+
+def record(part, method, metric, value, unit=''):
+    RECORDS.append({
+        'part': part,
+        'method': method,
+        'metric': metric,
+        'value': float(value),
+        'unit': unit,
+    })
 
 
 def chamfer_rmse(src, dst, trim=0.9, device='cuda'):
@@ -223,6 +237,30 @@ def main():
           f't 刚性={tr_r:.2f}mm RTW={tr_w:.2f}mm')
     print(f'  耗时:              刚性={t_rigid:.2f}s  RTW额外={t_rtw:.2f}s')
     print('=' * 66)
+    for method, values in {
+        'rigid': {
+            'depth_residual_rms': res_rigid,
+            'depth_inlier_fraction': inl_rigid,
+            'shape_chamfer': shape_rigid,
+            'camera_chamfer_rmse': rmse_rigid,
+            'vertex_deformation_error': vtx_err_rigid.mean(),
+            'rotation_error': rot_r,
+            'translation_error': tr_r,
+            'runtime': t_rigid,
+        },
+        'rtw': {
+            'depth_residual_rms': res_rtw,
+            'depth_inlier_fraction': inl_rtw,
+            'shape_chamfer': shape_rtw,
+            'camera_chamfer_rmse': rmse_rtw,
+            'vertex_deformation_error': vtx_err.mean(),
+            'rotation_error': rot_w,
+            'translation_error': tr_w,
+            'runtime': t_rtw,
+        },
+    }.items():
+        for metric, value in values.items():
+            record('smooth_ffd', method, metric, value)
 
 
 def part2_local_dent(device):
@@ -320,6 +358,26 @@ def part2_local_dent(device):
     print(f'  凹痕区形变恢复: 未建模={warp_mag[roi].mean():.3f}mm → '
           f'RTW残差={vtx_w[roi].mean():.3f}mm  '
           f'(↓{100 * (1 - vtx_w[roi].mean() / warp_mag[roi].mean()):.1f}%)')
+    for method, values in {
+        'rigid': {
+            'depth_residual_rms': res_r,
+            'depth_inlier_fraction': inl_r,
+            'shape_chamfer': shape_r,
+            'render_depth_error': render_err_r,
+            'roi_deformation_error': warp_mag[roi].mean(),
+            'rotation_error': rot_r,
+        },
+        'rtw': {
+            'depth_residual_rms': res_w,
+            'depth_inlier_fraction': inl_w,
+            'shape_chamfer': shape_w,
+            'render_depth_error': render_err_w,
+            'roi_deformation_error': vtx_w[roi].mean(),
+            'rotation_error': rot_w,
+        },
+    }.items():
+        for metric, value in values.items():
+            record('local_dent', method, metric, value)
 
 
 def part3_obs_guided(device):
@@ -400,7 +458,14 @@ def part3_obs_guided(device):
               f'(未建模{warp_mag[roi].mean():.2f}){decomp}')
         rows.append(dict(name=name, res=res_r, shape=shape,
                          vtx_roi=float(vtx[roi].mean())))
+        record('observability_guidance', name, 'depth_residual_rms', res_r)
+        record('observability_guidance', name, 'depth_inlier_fraction', inl_r)
+        record('observability_guidance', name, 'shape_chamfer', shape)
+        record('observability_guidance', name, 'roi_deformation_error',
+               vtx[roi].mean())
     print(f'  可观测子空间维数: {rtw_o["obs_rank"]}/{3 * 6 ** 3}')
+    record('observability_guidance', 'observed_penalty', 'observable_rank',
+           rtw_o['obs_rank'])
 
 
 if __name__ == '__main__':
@@ -408,3 +473,23 @@ if __name__ == '__main__':
     import torch as _th
     part2_local_dent('cuda' if _th.cuda.is_available() else 'cpu')
     part3_obs_guided('cuda' if _th.cuda.is_available() else 'cpu')
+    OUT.mkdir(parents=True, exist_ok=True)
+    with (OUT / 'metrics_long.csv').open('w', newline='',
+                                         encoding='utf-8') as stream:
+        writer = csv.DictWriter(stream, fieldnames=list(RECORDS[0].keys()))
+        writer.writeheader()
+        writer.writerows(RECORDS)
+    with (OUT / 'summary.json').open('w', encoding='utf-8') as stream:
+        json.dump({
+            'protocol': {
+                'seed_smooth_ffd': 42,
+                'seed_local_dent': 7,
+                'model': str(BOP_MODEL),
+                'device': 'cuda' if _th.cuda.is_available() else 'cpu',
+                'smooth_ffd_grid': [4, 4, 4],
+                'local_dent_grid': [6, 6, 6],
+            },
+            'metrics': RECORDS,
+        }, stream, indent=2)
+    print(f'Saved {OUT / "metrics_long.csv"}')
+    print(f'Saved {OUT / "summary.json"}')

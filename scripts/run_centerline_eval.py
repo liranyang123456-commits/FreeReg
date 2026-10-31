@@ -5,13 +5,15 @@ E1.5 中心线骨架对应注册评测
 
 Part A (合成, 有GT): 飞行帧渲染 → 暗区骨架 → 中心线对应注册 (扰动初始化)
     → 位姿误差/chamfer 收敛, vs 深度ICP基线
-Part B (真实视频): 省医001 帧 → 管腔骨架 → 中心线对应注册
+Part B (真实视频): 私有支气管镜帧 → 管腔骨架 → 中心线对应注册
     → chamfer 收敛 + 叠加可视化 (无GT, 结构对齐为主要证据)
 
 用法:
     conda activate py3d
     python scripts/run_centerline_eval.py
 """
+import csv
+import json
 import os
 os.environ.setdefault('KMP_DUPLICATE_LIB_OK', 'TRUE')
 
@@ -34,9 +36,16 @@ from src.centerline import (airway_centerline_3d, lumen_skeleton_2d,
 from src.ct_loader import load_ct_airway, make_flythrough_poses, CTVolume
 import torch
 
-P1 = r'F:\省医-数据\省医-数据\ION患者整理\P001'
-VIDEO = (r'F:\省医-数据\省医-数据\ION患者整理\P001\术中视频'
-         r'\Video_screenshot_Henan1\ion_video_2021-10-26_03-33-50_L.mp4')
+CLINICAL_ROOT = Path(os.environ.get(
+    'FREEREG_ION_ROOT', r'F:\省医-数据\省医-数据\ION患者整理'))
+P1_MATCHES = sorted(path for path in CLINICAL_ROOT.glob('001*')
+                    if path.is_dir())
+P1 = P1_MATCHES[0] if P1_MATCHES else CLINICAL_ROOT / '__missing__'
+VIDEO_MATCHES = sorted(P1.rglob('*_L.mp4')) if P1.is_dir() else []
+VIDEO = os.environ.get(
+    'FREEREG_BRONCHOSCOPY_VIDEO',
+    str(VIDEO_MATCHES[0] if VIDEO_MATCHES else P1 / '__missing__.mp4'),
+)
 CACHE = Path('outputs/ct/airway_cache.npz')
 MASK_CACHE = Path('outputs/ct/airway_mask.npz')
 OUT = Path('outputs/ct/centerline')
@@ -53,7 +62,7 @@ def load_model_and_mask():
         z = np.load(MASK_CACHE)
         return z['points'], z['mask'], z['spacing'], z['origin'], \
             z['axis_pts'], z['axis_dir']
-    model = load_ct_airway(P1, max_slices=200, max_pts=50000)
+    model = load_ct_airway(str(P1), max_slices=200, max_pts=50000)
     vol = model.volume
     MASK_CACHE.parent.mkdir(parents=True, exist_ok=True)
     np.savez(MASK_CACHE, points=model.points, mask=model.mask,
@@ -201,8 +210,6 @@ def part_b(pts, cl_pts, junc_idx, axis_dir, device):
               f'({t_cl * 1000:.0f}ms)')
 
         # 叠加可视化: 投影中心线 (红) + 分叉 (黄) + 骨架 (绿)
-        # 注意: 论文 Fig 8 的「纯内镜视野」版本由
-        # scripts/make_centerline_endo_fig.py 生成 (裁剪 Ion Live-View)。
         vis = bgr.copy()
         P = transform(res['T'], cl_crop)
         z = P[:, 2]
@@ -250,8 +257,62 @@ def main():
         mask, volume=vol, return_junctions=True)
     print(f'气道: {len(pts)}点; 中心线: {len(cl_pts)}点 '
           f'(分叉{len(junc_idx)}, 端点{len(end_idx)})')
-    part_a(pts, cl_pts, axis_pts, axis_dir, device)
-    part_b(pts, cl_pts, junc_idx, axis_dir, device)
+    rows_a = part_a(pts, cl_pts, axis_pts, axis_dir, device)
+    rows_b = part_b(pts, cl_pts, junc_idx, axis_dir, device)
+    OUT.mkdir(parents=True, exist_ok=True)
+    with (OUT / 'synthetic_frames.csv').open(
+            'w', newline='', encoding='utf-8') as stream:
+        fields = list(rows_a[0].keys()) if rows_a else [
+            'f', 'rot0', 'tr0', 'cham0', 'cham', 'rot_c', 'tr_c',
+            'rot_i', 'tr_i', 'ms']
+        writer = csv.DictWriter(stream, fieldnames=fields)
+        writer.writeheader()
+        writer.writerows(rows_a)
+    with (OUT / 'real_video_frames.csv').open(
+            'w', newline='', encoding='utf-8') as stream:
+        fields = list(rows_b[0].keys()) if rows_b else [
+            'f', 'cham0', 'cham', 'jerr', 'ms']
+        writer = csv.DictWriter(stream, fieldnames=fields)
+        writer.writeheader()
+        writer.writerows(rows_b)
+    summary = {
+        'protocol': {
+            'synthetic_frame_ids': [2, 8, 14],
+            'real_video_evidence_is_qualitative': True,
+            'real_video_ground_truth_available': False,
+            'device': device,
+        },
+        'synthetic': {
+            'n': len(rows_a),
+            'centerline_rotation_error_mean_deg':
+                float(np.mean([r['rot_c'] for r in rows_a]))
+                if rows_a else None,
+            'centerline_translation_error_mean_mm':
+                float(np.mean([r['tr_c'] for r in rows_a]))
+                if rows_a else None,
+            'icp_rotation_error_mean_deg':
+                float(np.mean([r['rot_i'] for r in rows_a]))
+                if rows_a else None,
+            'icp_translation_error_mean_mm':
+                float(np.mean([r['tr_i'] for r in rows_a]))
+                if rows_a else None,
+        },
+        'real_video': {
+            'n': len(rows_b),
+            'centerline_chamfer_mean_px':
+                float(np.mean([r['cham'] for r in rows_b]))
+                if rows_b else None,
+            'junction_error_mean_px':
+                float(np.nanmean([r['jerr'] for r in rows_b]))
+                if rows_b else None,
+            'runtime_mean_ms':
+                float(np.mean([r['ms'] for r in rows_b]))
+                if rows_b else None,
+        },
+    }
+    with (OUT / 'summary.json').open('w', encoding='utf-8') as stream:
+        json.dump(summary, stream, indent=2)
+    print(f'Saved {OUT / "summary.json"}')
     print('=' * 66)
 
 

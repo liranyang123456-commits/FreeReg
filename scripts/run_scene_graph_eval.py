@@ -4,9 +4,9 @@ M3 多模型场景图评测
 ===================
 
 场景: BOP 真实 RGB-D 背景 (scene2 f000243, benchvise) + 3 个虚拟模型
-  duck (z=700mm, 最前) / ape (z=900mm, 中) / can (z=1100mm, 最后,
+  driller (z=700mm, 最前) / ape (z=900mm, 中) / can (z=1100mm, 最后,
   且位于真实 benchvise 之后 → 真实场景遮挡虚拟模型)
-→ 三重遮挡: 虚拟-虚拟 (duck⊃ape⊃can) + 真实-虚拟 (benchvise⊃can)
+→ 三重遮挡: 虚拟-虚拟 (driller⊃ape⊃can) + 真实-虚拟 (benchvise⊃can)
 
 评测:
   1) 每模型独立注册 (合成观测深度 + GT mask) → ADD-S vs GT
@@ -24,6 +24,7 @@ os.environ.setdefault('KMP_DUPLICATE_LIB_OK', 'TRUE')
 import sys
 import json
 import time
+import csv
 from pathlib import Path
 
 import numpy as np
@@ -41,14 +42,35 @@ import torch
 
 BOP = Path(r'D:\bop\lm')
 OUT = Path('outputs/scene_graph')
+OUTLINED_FIG = OUT / 'scene_graph_outlined.png'
 
 # (model_ply, 颜色, GT位姿t, GT旋转rv)
 VIRTUALS = [
-    ('obj_000008.ply', 'duck', (0.2, 0.9, 0.3), [0, -10, 700.0], [0.1, -0.2, 0.05]),
+    ('obj_000008.ply', 'driller', (0.2, 0.9, 0.3), [0, -10, 700.0], [0.1, -0.2, 0.05]),
     ('obj_000001.ply', 'ape', (0.9, 0.5, 0.2), [60, 20, 900.0], [-0.05, 0.15, -0.1]),
     ('obj_000005.ply', 'can', (0.3, 0.5, 0.9), [20, 30, 1100.0], [0.02, 0.0, 0.25]),
 ]
 BG_SCENE, BG_FRAME = 2, 243
+
+
+def outline_virtual(tri, label_h=30, thresh=40, min_area=80):
+    """Outline, in both composite panels of the BGR triptych, the pixels that
+    differ from the real-background panel, i.e. the visible virtual models."""
+    w = tri.shape[1] // 3
+    bg = tri[:, :w].astype(int)
+    out = tri.copy()
+    for k in (1, 2):
+        diff = np.abs(tri[:, k * w:(k + 1) * w].astype(int) - bg).sum(2)
+        diff[:label_h] = 0
+        mask = (diff > thresh).astype(np.uint8)
+        mask = cv2.morphologyEx(mask, cv2.MORPH_OPEN, np.ones((3, 3), np.uint8))
+        mask = cv2.morphologyEx(mask, cv2.MORPH_CLOSE, np.ones((5, 5), np.uint8))
+        n, lab, stats, _ = cv2.connectedComponentsWithStats(mask)
+        big = [i for i in range(1, n) if stats[i, cv2.CC_STAT_AREA] >= min_area]
+        keep = np.isin(lab, big).astype(np.uint8)
+        cnts, _ = cv2.findContours(keep, cv2.RETR_EXTERNAL, cv2.CHAIN_APPROX_NONE)
+        cv2.drawContours(out[:, k * w:(k + 1) * w], cnts, -1, (0, 255, 255), 2)
+    return out
 
 
 def main():
@@ -89,10 +111,10 @@ def main():
     by = (int(ys.min()), int(ys.max()))
     cy = (by[0] + by[1]) // 2
 
-    # duck: 前景 (285,235) z=650 (遮挡 ape 与真实物体)
-    t_duck = pix_to_3d(285, 235, 650.0)
-    # ape: (350,245) z=800 —— benchvise(≈850mm) 之前, duck 之后,
-    #      保证: 与duck重叠处被duck挡, 其余区域可见 (三重链 duck⊃ape⊃real)
+    # driller: 前景 (285,235) z=650 (遮挡 ape 与真实物体)
+    t_driller = pix_to_3d(285, 235, 650.0)
+    # ape: (350,245) z=800 —— benchvise(≈850mm) 之前, driller 之后,
+    #      保证: 与driller重叠处被driller挡, 其余区域可见 (三重链 driller⊃ape⊃real)
     t_ape = pix_to_3d(350, 245, 800.0)
     # can: 沿真实深度自适应搜索 —— benchvise 右缘外, 立于远桌面之前
     # (z = 桌面深度-60 → 右部可见; 且 z > benchvise深度 → 左部被挡 real⊃can)
@@ -105,14 +127,14 @@ def main():
     if t_can is None:
         t_can = pix_to_3d(bx[1] + 20, cy, 1000.0)
     VIRTUALS = [
-        ('obj_000008.ply', 'duck', (0.2, 0.9, 0.3), t_duck.tolist(),
+        ('obj_000008.ply', 'driller', (0.2, 0.9, 0.3), t_driller.tolist(),
          [0.1, -0.2, 0.05]),
         ('obj_000001.ply', 'ape', (0.9, 0.5, 0.2), t_ape.tolist(),
          [-0.05, 0.15, -0.1]),
         ('obj_000005.ply', 'can', (0.3, 0.5, 0.9), t_can.tolist(),
          [0.02, 0.0, 0.25]),
     ]
-    print(f'摆放: duck@({t_duck.round(0)}) ape@({t_ape.round(0)}) '
+    print(f'摆放: driller@({t_driller.round(0)}) ape@({t_ape.round(0)}) '
           f'can@({t_can.round(0)}) 真实物体u∈{bx}')
 
     models = {}
@@ -207,8 +229,8 @@ def main():
     comp_est, vdepth_est, owner_est = sg_est.composite(
         rgb, device=device, radius=2)
     occ_acc = occlusion_decision_accuracy(vdepth_est, vdepth_gt, depth_real)
-    # 分组指标: 注册良好子集 (duck+ape) 的遮挡正确率 —— 隔离机制 vs 位姿误差
-    idx_da = [list(models.keys()).index(n) for n in ('duck', 'ape')]
+    # 分组指标: 注册良好子集 (driller+ape) 的遮挡正确率 —— 隔离机制 vs 位姿误差
+    idx_da = [list(models.keys()).index(n) for n in ('driller', 'ape')]
     vd_est2 = np.where(np.isin(owner_est, idx_da), vdepth_est, 0)
     vd_gt2 = np.where(np.isin(owner_gt, idx_da), vdepth_gt, 0)
     occ_acc2 = occlusion_decision_accuracy(vd_est2, vd_gt2, depth_real)
@@ -222,6 +244,9 @@ def main():
                     cv2.FONT_HERSHEY_SIMPLEX, 0.6, (255, 255, 255), 2)
     cv2.imwrite(str(OUT / 'scene_graph.png'),
                 cv2.cvtColor(tri_u8, cv2.COLOR_RGB2BGR))
+    OUTLINED_FIG.parent.mkdir(parents=True, exist_ok=True)
+    cv2.imwrite(str(OUTLINED_FIG),
+                outline_virtual(cv2.cvtColor(tri_u8, cv2.COLOR_RGB2BGR)))
 
     # ---------- 汇总 ----------
     adds_arr = np.array([r[1] for r in rows])
@@ -232,10 +257,49 @@ def main():
           f'<10%直径比例: {float(np.nanmean(adds_arr < 12)):.0%}')
     print(f'  场景图边正确率: {n_edge_ok}/{len(edges_est)} = {edge_acc:.0%}')
     print(f'  遮挡决策正确率: {occ_acc:.1%}  (全模型, 受can位姿误差主导)')
-    print(f'  遮挡决策正确率: {occ_acc2:.1%}  (duck+ape 注册良好子集)')
+    print(f'  遮挡决策正确率: {occ_acc2:.1%}  (driller+ape 注册良好子集)')
     print(f'  输出: {OUT / "scene_graph.png"}')
+    with open(OUT / 'registration_metrics.csv', 'w', newline='',
+              encoding='utf-8') as f:
+        w = csv.writer(f)
+        w.writerow(['model', 'add_s_mm', 'registration_time_s'])
+        w.writerows((name, f'{adds:.9f}', f'{dt:.9f}')
+                    for name, adds, dt, _ in rows)
+    summary = {
+        'protocol': {
+            'background_scene': BG_SCENE,
+            'background_frame': BG_FRAME,
+            'virtual_models': list(models.keys()),
+            'occlusion_metric_scope': {
+                'full': 'all virtual models versus controlled ground truth',
+                'registered_subset': 'driller and ape only',
+            },
+        },
+        'edge_correct': int(n_edge_ok),
+        'edge_total': int(len(edges_est)),
+        'edge_accuracy': float(edge_acc),
+        'occlusion_decision_accuracy_full': float(occ_acc),
+        'occlusion_decision_accuracy_registered_subset': float(occ_acc2),
+        'registration_add_s_mm': {
+            name: float(adds) for name, adds, _, _ in rows
+        },
+    }
+    with open(OUT / 'summary.json', 'w', encoding='utf-8') as f:
+        json.dump(summary, f, ensure_ascii=False, indent=2)
+    print(f'  结构化结果: {OUT / "registration_metrics.csv"}, '
+          f'{OUT / "summary.json"}')
     print('=' * 66)
 
 
 if __name__ == '__main__':
-    main()
+    import argparse
+    ap = argparse.ArgumentParser()
+    ap.add_argument('--outline-only', metavar='TRIPTYCH',
+                    help='write the outlined triptych from an existing image; '
+                         'the evaluation is not re-run')
+    args = ap.parse_args()
+    if args.outline_only:
+        OUTLINED_FIG.parent.mkdir(parents=True, exist_ok=True)
+        cv2.imwrite(str(OUTLINED_FIG), outline_virtual(cv2.imread(args.outline_only)))
+    else:
+        main()

@@ -13,7 +13,6 @@
   → 投影中心线拟合观测骨架 → T (内窥镜视角下结构对齐)
 
 依赖: numpy, cv2, skimage, torch
-
 """
 import cv2
 import numpy as np

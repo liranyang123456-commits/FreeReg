@@ -16,6 +16,7 @@ os.environ.setdefault('KMP_DUPLICATE_LIB_OK', 'TRUE')
 
 import sys
 import time
+import json
 from pathlib import Path
 
 import numpy as np
@@ -178,6 +179,34 @@ def main():
         w.writeheader()
         for r in rows:
             w.writerow({k: v for k, v in r.items() if k != 'T_ours'})
+    with open(OUT / 'summary.json', 'w', encoding='utf-8') as f:
+        json.dump({
+            'protocol': {
+                'requested_frames': N_FRAMES,
+                'completed_frames': len(rows),
+                'real_ct_synthetic_flythrough': True,
+                'same_rendered_frames_and_landmarks': True,
+                'metric': 'TRE-NN on 100 model landmarks',
+            },
+            'foundationpose': {
+                'tre_mean_mm': float(tre_fp.mean()),
+                'tre_median_mm': float(np.median(tre_fp)),
+                'success_lt10': float((tre_fp < 10).mean()),
+                'rotation_error_mean_deg':
+                    float(np.mean([r['rot_fp'] for r in rows])),
+                'runtime_mean_s':
+                    float(np.mean([r['ms_fp'] for r in rows]) / 1000),
+            },
+            'freereg': {
+                'tre_mean_mm': float(tre_ours.mean()),
+                'tre_median_mm': float(np.median(tre_ours)),
+                'success_lt10': float((tre_ours < 10).mean()),
+                'rotation_error_mean_deg':
+                    float(np.mean([r['rot_ours'] for r in rows])),
+                'runtime_mean_ms':
+                    float(np.mean([r['ms_ours'] for r in rows])),
+            },
+        }, f, indent=2)
     print(f'  CSV: {OUT / "fp_vs_ours.csv"}')
     print('=' * 66)
 

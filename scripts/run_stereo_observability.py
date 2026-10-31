@@ -42,17 +42,26 @@ def subdivide(nodes, tris, n_per=6):
     return np.array(pts)
 
 
-def obs_rank_multi(Wt, R_list, tau_ratio=1e-3):
-    """多视角观测算子 J=[J_c] 的秩. 每个视角贡献其视线方向 R_c 的 z 行."""
+def obs_rank_multi(Wt, R_list, delta_gt=None, tau_ratio=1e-3):
+    """多视角观测算子 J=[J_c] 的秩及目标形变可恢复能量。
+
+    可恢复能量定义为 ||P_obs δ||² / ||δ||²，而不是投影向量范数比例。
+    """
     Js = []
     for R in R_list:
         Rz = R[2, :]
         J = -(Wt.unsqueeze(2) * Rz.reshape(1, 1, 3)).reshape(Wt.shape[0], -1)
         Js.append(J)
     J = torch.cat(Js, 0)
-    S = torch.linalg.svdvals(J)
+    _, S, Vh = torch.linalg.svd(J, full_matrices=False)
     r = int((S > S.max() * tau_ratio).sum().item())
-    return r, S
+    energy_pct = float('nan')
+    if delta_gt is not None and r > 0:
+        V_obs = Vh[:r].T
+        projected = V_obs @ (V_obs.T @ delta_gt)
+        energy_pct = 100.0 * float(
+            projected.square().sum() / delta_gt.square().sum().clamp(min=1e-12))
+    return r, S, energy_pct
 
 
 def main():
@@ -70,6 +79,22 @@ def main():
     n_ctrl3 = 3 * lat.n_ctrl
     print(f'model: {len(base)} pts, FFD ctrl={lat.n_ctrl}, dof={n_ctrl3}')
 
+    # 固定目标形变，用于“可恢复能量”而非仅报告秩。
+    rng = np.random.default_rng(5)
+    delta_np = rng.normal(0, 1.0, (lat.n_ctrl, 3))
+    edges = lat._edges.detach().cpu().numpy()
+    for _ in range(2):
+        delta_next = delta_np.copy()
+        count = np.ones(len(delta_np))
+        for a, b in edges:
+            delta_next[a] += delta_np[b]
+            delta_next[b] += delta_np[a]
+            count[a] += 1
+            count[b] += 1
+        delta_np = delta_next / count[:, None]
+    delta_gt = torch.as_tensor(delta_np.reshape(-1), dtype=torch.float32,
+                               device=device)
+
     rows = []
     # (1) rank vs 视角数 (固定基线间隔 12°)
     print('\n--- rank vs 视角数 (基线间隔 12°) ---')
@@ -81,10 +106,11 @@ def main():
                        np.array([0., 0., 320.]))
             R_list.append(torch.as_tensor(T[:3, :3], dtype=torch.float32,
                                           device=device))
-        r, _ = obs_rank_multi(Wt, R_list)
+        r, _, energy_pct = obs_rank_multi(Wt, R_list, delta_gt)
         pct = 100 * r / n_ctrl3
-        rows.append(('views', V, 12.0, r, pct))
-        print(f'  V={V}: rank={r}/{n_ctrl3} ({pct:.0f}%)')
+        rows.append(('views', V, 12.0, r, pct, energy_pct))
+        print(f'  V={V}: rank={r}/{n_ctrl3} ({pct:.0f}%), '
+              f'recoverable energy={energy_pct:.1f}%')
 
     # (2) rank vs 双目基线角度 (V=2)
     print('\n--- rank vs 双目基线角度 (V=2) ---')
@@ -95,15 +121,17 @@ def main():
                        np.array([0., 0., 320.]))
             R_list.append(torch.as_tensor(T[:3, :3], dtype=torch.float32,
                                           device=device))
-        r, _ = obs_rank_multi(Wt, R_list)
+        r, _, energy_pct = obs_rank_multi(Wt, R_list, delta_gt)
         pct = 100 * r / n_ctrl3
-        rows.append(('baseline', 2, sep_deg, r, pct))
-        print(f'  基线 ±{sep_deg/2:.0f}°: rank={r}/{n_ctrl3} ({pct:.0f}%)')
+        rows.append(('baseline', 2, sep_deg, r, pct, energy_pct))
+        print(f'  基线 ±{sep_deg/2:.0f}°: rank={r}/{n_ctrl3} ({pct:.0f}%), '
+              f'recoverable energy={energy_pct:.1f}%')
 
     import csv
     with open(OUT / 'stereo_observability.csv', 'w', newline='') as f:
         w = csv.writer(f)
-        w.writerow(['mode', 'n_views', 'sep_deg', 'rank', 'rank_pct'])
+        w.writerow(['mode', 'n_views', 'sep_deg', 'rank', 'rank_pct',
+                    'recoverable_energy_pct'])
         w.writerows(rows)
     make_figure(rows, n_ctrl3)
     print('saved ->', OUT / 'stereo_observability.csv')
@@ -131,8 +159,6 @@ def make_figure(rows, n_ctrl3):
     fig.suptitle(f'Observability rank vs views / baseline (dof={n_ctrl3})')
     fig.tight_layout()
     fig.savefig(OUT / 'stereo_observability.png', dpi=200)
-***REMOVED***
-***REMOVED***
     print('saved figure')
 
 

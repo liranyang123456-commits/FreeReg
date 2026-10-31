@@ -14,7 +14,6 @@ CT DICOM 加载与气道建模 —— 医疗 CT-视频注册 (E1) 前端
 ImageOrientationPatient 处理, 默认取轴向扫描标准布局)
 
 依赖: pydicom, numpy, scipy, skimage
-
 """
 from dataclasses import dataclass
 from pathlib import Path

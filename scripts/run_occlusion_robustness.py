@@ -101,6 +101,7 @@ def main():
                         break
 
     rows = []
+    sample_rows = []
     for bi, (lo, hi) in enumerate(BINS):
         samples = bin_samples[bi]
         rng = np.random.default_rng(0)
@@ -130,6 +131,10 @@ def main():
             res = register_rgbd(depth, K, pts, mask=mask, cfg=cfg)
             if res['T'] is None:
                 succ_list.append(0.0)
+                sample_rows.append(dict(protocol='natural', level=f'[{lo:.1f},{hi:.1f})',
+                                        scene=sid, frame=int(fk), instance=inst,
+                                        visibility=vf, success=0, add_s_mm=np.nan,
+                                        rot_deg=np.nan))
                 continue
             T_est = res['T']
             T_gt = np.eye(4)
@@ -141,6 +146,11 @@ def main():
             adds_list.append(adds)
             rot_list.append(rot)
             succ_list.append(1.0 if adds < 0.1 * diam else 0.0)
+            sample_rows.append(dict(protocol='natural', level=f'[{lo:.1f},{hi:.1f})',
+                                    scene=sid, frame=int(fk), instance=inst,
+                                    visibility=vf,
+                                    success=int(adds < 0.1 * diam),
+                                    add_s_mm=float(adds), rot_deg=float(rot)))
 
         if adds_list:
             adds_a = np.array(adds_list)
@@ -190,7 +200,12 @@ def main():
             d_occ, m_occ = apply_synth_occlusion(depth, mask, occ, rng2)
             res = register_rgbd(d_occ, K, pts, mask=m_occ, cfg=cfg)
             if res['T'] is None:
-                succ_l.append(0.0); continue
+                succ_l.append(0.0)
+                sample_rows.append(dict(protocol='synthetic', level=f'{occ:.0%}',
+                                        scene=sid, frame=int(fk), instance=inst,
+                                        visibility=vf, success=0,
+                                        add_s_mm=np.nan, rot_deg=np.nan))
+                continue
             T_est = res['T']
             T_gt = np.eye(4)
             T_gt[:3, :3] = np.array(g['cam_R_m2c']).reshape(3, 3)
@@ -200,6 +215,11 @@ def main():
             rot, _ = pose_errors(T_est, T_gt)
             adds_l.append(adds); rot_l.append(rot)
             succ_l.append(1.0 if adds < 0.1 * diam else 0.0)
+            sample_rows.append(dict(protocol='synthetic', level=f'{occ:.0%}',
+                                    scene=sid, frame=int(fk), instance=inst,
+                                    visibility=vf,
+                                    success=int(adds < 0.1 * diam),
+                                    add_s_mm=float(adds), rot_deg=float(rot)))
         if adds_l:
             occ_rows.append(dict(occ=f'{occ:.0%}', n=len(adds_l),
                                  succ=float(np.mean(succ_l)),
@@ -215,7 +235,12 @@ def main():
                                           'adds_med'])
         w.writeheader()
         w.writerows(occ_rows)
+    with open(OUT / 'occlusion_samples.csv', 'w', newline='') as f:
+        w = csv.DictWriter(f, fieldnames=list(sample_rows[0].keys()))
+        w.writeheader()
+        w.writerows(sample_rows)
     print(f'\nCSV: {OUT / "occlusion_synth.csv"}')
+    print(f'逐样本: {OUT / "occlusion_samples.csv"}')
 
 
 if __name__ == '__main__':

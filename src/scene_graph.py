@@ -15,7 +15,6 @@
                  real / virtual-near / virtual-far), 输出 AR 融合图
 
 依赖: numpy, torch
-
 """
 from dataclasses import dataclass, field
 from typing import Dict, List, Tuple

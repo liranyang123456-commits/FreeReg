@@ -21,7 +21,6 @@ RTW: 刚性位姿 + 非刚性形变场 联合估计 (CUDA)
 的可解释轻量实现, 参数语义一致, 可原位升级为神经形变场。
 
 依赖: torch (CUDA 可选), numpy
-
 """
 import numpy as np
 import torch
@@ -426,7 +425,7 @@ def compute_observability_basis(W: torch.Tensor, R: torch.Tensor,
 
     Returns:
         V_obs:  (3M, r) 可观测方向基 (σ>τ)
-        s:      (3M,) 全部奇异值 (分析用)
+        s:      (min(N,3M),) 奇异值 (分析用)
         r:      可观测子空间维数
     """
     N, M = W.shape
@@ -465,9 +464,9 @@ def rtw_optimize_projective_obs(model_pts: np.ndarray, depth_img: np.ndarray,
     """
     可观测性引导的 RTW 优化
 
-    与 rtw_optimize_projective 的唯一区别:
-    数据项不变, 额外对形变的**不可观测子空间分量**施加强收缩
-    (λ_unobs·||δ_unobs||²), 抑制无数据支持的伪形变 (过拟合)。
+    与 rtw_optimize_projective 的主要区别:
+    额外对固定线性化下的数值零空间分量施加有限二次惩罚
+    (λ_unobs·||δ_unobs||²)。它收缩而不禁止这些分量。
 
     Returns: dict(T, delta, lattice, losses, V_def, res_rms, obs_rank,
                   obs_singular)

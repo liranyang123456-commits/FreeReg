@@ -25,7 +25,6 @@ model-free 模式的输入假设一致); BOP 官方榜单场景则交给
 FoundationPose 的纹理感知神经评分器。
 
 依赖: opencv, numpy
-
 """
 import cv2
 import numpy as np

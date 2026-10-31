@@ -22,7 +22,6 @@
   - 单位与输入一致 (BOP: 毫米; 其他: 米)
 
 依赖: numpy
-
 """
 import numpy as np
 
@@ -50,10 +49,26 @@ def exp_so3(w: np.ndarray) -> np.ndarray:
 
 def log_so3(R: np.ndarray) -> np.ndarray:
     """旋转矩阵 (3,3) → 旋转向量 (3,)"""
+    R = np.asarray(R, dtype=np.float64)
+    # Numerical pose solvers can return a matrix a few ulps away from SO(3).
+    # Project before taking the logarithm; otherwise the near-pi branch can
+    # amplify tiny orthogonality errors by 1/sin(theta).
+    U, _s, Vt = np.linalg.svd(R)
+    R = U @ Vt
+    if np.linalg.det(R) < 0:
+        U[:, -1] *= -1.0
+        R = U @ Vt
     cos_theta = np.clip((np.trace(R) - 1.0) / 2.0, -1.0, 1.0)
     theta = np.arccos(cos_theta)
     if theta < 1e-12:
         return np.zeros(3)
+    if np.pi - theta < 1e-7:
+        # At pi, the standard skew/sin(theta) expression is indeterminate.
+        # The rotation axis is the eigenvector of (R+R^T)/2 with eigenvalue 1.
+        eigenvalues, eigenvectors = np.linalg.eigh((R + R.T) / 2.0)
+        axis = eigenvectors[:, np.argmax(eigenvalues)]
+        axis /= max(np.linalg.norm(axis), 1e-15)
+        return theta * axis
     w = theta / (2.0 * np.sin(theta)) * np.array([
         R[2, 1] - R[1, 2],
         R[0, 2] - R[2, 0],
@@ -79,8 +94,8 @@ def exp_se3(xi: np.ndarray) -> np.ndarray:
     K = hat(w / theta)
     R = np.eye(3) + np.sin(theta) * K + (1.0 - np.cos(theta)) * (K @ K)
     V = (np.eye(3)
-         + (1.0 - np.cos(theta)) / theta**2 * K
-         + (theta - np.sin(theta)) / theta**3 * (K @ K))
+         + (1.0 - np.cos(theta)) / theta * K
+         + (theta - np.sin(theta)) / theta * (K @ K))
     T[:3, :3] = R
     T[:3, 3] = V @ v
     return T
@@ -95,8 +110,8 @@ def log_se3(T: np.ndarray) -> np.ndarray:
         return np.concatenate([t, np.zeros(3)])
     K = hat(w / theta)
     V = (np.eye(3)
-         + (1.0 - np.cos(theta)) / theta**2 * K
-         + (theta - np.sin(theta)) / theta**3 * (K @ K))
+         + (1.0 - np.cos(theta)) / theta * K
+         + (theta - np.sin(theta)) / theta * (K @ K))
     v = np.linalg.solve(V, t)
     return np.concatenate([v, w])
 

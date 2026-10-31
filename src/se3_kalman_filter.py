@@ -1,14 +1,14 @@
 """
 SE(3) 流形上的 Kalman 滤波器 —— 用于6DoF位姿时序一致性
 
-本模块是注册方案的核心创新点: 将逐帧独立的 FoundationPose 位姿估计
-通过流形上的 Kalman 滤波平滑, 显著降低视频抖动 (预期 RMS 抖动 3.5px → 0.6px)。
+本模块对任意逐帧模型到相机位姿测量进行常速度预测、创新门控和平滑。
 
 数学要点:
   - 位姿 T ∈ SE(3), 其李代数 ξ = log(T) ∈ se(3) ≅ R^6 (前3平移, 后3旋转)
   - 状态: x = [ξ, v]  (ξ: 当前位姿李代数, v: 速度 ∈ R^6)
   - 运动模型: 匀速  ξ(t+1) = ξ(t) ⊕ v·Δt   (⊕ 表示 SE(3) 上的群加)
-  - 测量: z = log(T_meas · T_pred^{-1})  (创新, ∈ se(3))
+  - 测量: η = log(T_pred^{-1} · T_meas)
+    (体坐标中的右乘误差；本文不称其为严格右不变滤波器)
 
 注意: 本实现使用 np.einsum 替代 @ / np.dot / np.matmul 进行矩阵乘法
       (以兼容某些受限执行环境)。
@@ -18,7 +18,6 @@ SE(3) 流形上的 Kalman 滤波器 —— 用于6DoF位姿时序一致性
   - FoundationPose tracking mode: https://github.com/NVlabs/FoundationPose
 
 依赖: numpy
-
 """
 import numpy as np
 from dataclasses import dataclass
@@ -66,11 +65,10 @@ def exp_se3(xi: np.ndarray) -> np.ndarray:
         return T
     K = hat_so3(w / theta)  # 单位旋转轴的反对称矩阵
     R = np.eye(3) + np.sin(theta) * K + (1 - np.cos(theta)) * mm(K, K)
-    # 平移闭式: V = (I + (1-cosθ)/θ² K + (θ-sinθ)/θ³ K²) v
-    V = np.eye(3) + (1 - np.cos(theta)) / (theta**2) * K + \
-        (theta - np.sin(theta)) / (theta**3) * mm(mm(K, K), np.eye(3))
-    V = np.eye(3) + (1 - np.cos(theta)) / (theta**2) * K + \
-        (theta - np.sin(theta)) / (theta**3) * mm(K, K)
+    # K=[w/θ]× 为单位轴矩阵，因此左雅可比的等价形式为
+    # V = I + (1-cosθ)/θ K + (θ-sinθ)/θ K²。
+    V = np.eye(3) + (1 - np.cos(theta)) / theta * K + \
+        (theta - np.sin(theta)) / theta * mm(K, K)
     T = np.eye(4)
     T[:3, :3] = R
     T[:3, 3] = mm(V, v)
@@ -81,19 +79,30 @@ def log_se3(T: np.ndarray) -> np.ndarray:
     """SE(3) 4x4 → se(3) 向量(6,) (对数映射)"""
     R = T[:3, :3]; t = T[:3, 3]
     # so(3) 对数
+    U, _s, Vt = np.linalg.svd(R)
+    R = U @ Vt
+    if np.linalg.det(R) < 0:
+        U[:, -1] *= -1.0
+        R = U @ Vt
     cos_theta = (np.trace(R) - 1) / 2
     cos_theta = np.clip(cos_theta, -1.0, 1.0)
     theta = np.arccos(cos_theta)
     if theta < 1e-10:
         return np.concatenate([t, np.zeros(3)])
-    w = theta / (2 * np.sin(theta)) * np.array([
-        R[2, 1] - R[1, 2],
-        R[0, 2] - R[2, 0],
-        R[1, 0] - R[0, 1]
-    ])
+    if np.pi - theta < 1e-7:
+        eigenvalues, eigenvectors = np.linalg.eigh((R + R.T) / 2.0)
+        axis = eigenvectors[:, np.argmax(eigenvalues)]
+        axis /= max(np.linalg.norm(axis), 1e-15)
+        w = theta * axis
+    else:
+        w = theta / (2 * np.sin(theta)) * np.array([
+            R[2, 1] - R[1, 2],
+            R[0, 2] - R[2, 0],
+            R[1, 0] - R[0, 1]
+        ])
     K = hat_so3(w / theta)
-    V = np.eye(3) + (1 - np.cos(theta)) / (theta**2) * K + \
-        (theta - np.sin(theta)) / (theta**3) * mm(K, K)
+    V = np.eye(3) + (1 - np.cos(theta)) / theta * K + \
+        (theta - np.sin(theta)) / theta * mm(K, K)
     v = np.linalg.solve(V, t)
     return np.concatenate([v, w])
 
@@ -124,7 +133,7 @@ class SE3KalmanConfig:
     process_noise_vel_rot: float = 1e-4  # 旋转速度过程噪声 (Q = 值·dt, rad级)
     meas_noise_pos: float = 5e-3        # 平移测量噪声 (单位)
     meas_noise_rot: float = 5e-3        # 旋转测量噪声 (rad)
-    innovation_threshold: float = 3.0   # 门控阈值 (马氏式归一化, 单位σ, 无量纲)
+    innovation_threshold: float = 3.0   # 分量归一化创新和的门控阈值 (无量纲)
     max_consecutive_reject: int = 5     # 连续拒绝 N 帧后才判定真丢失→重定位
     velocity_damping: float = 0.95      # 速度阻尼(防漂移)
 
@@ -208,7 +217,7 @@ class SE3KalmanFilter:
         # 1. 预测
         self.predict(dt)
 
-        # 2. 计算创新 (体坐标系右不变误差: 与预测步 T·exp(v·dt) 的右乘
+        # 2. 计算创新 (体坐标系右乘误差: 与预测步 T·exp(v·dt) 的右乘
         #    更新在同一坐标架下, 避免全局架/体架混用导致的系统性误校正)
         T_pred_inv = inverse_se3(self.T)
         innovation = log_se3(compose_se3(T_pred_inv, T_meas))  # (6,)

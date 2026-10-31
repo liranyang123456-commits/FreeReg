@@ -1,0 +1,14 @@
+outputs/
+outputs_backup/
+docs/
+*.zip
+*.7z
+*.tar
+*.tar.gz
+__pycache__/
+*.pyc
+.pytest_cache/
+.DS_Store
+Thumbs.db
+texput.log
+*.synctex

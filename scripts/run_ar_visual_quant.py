@@ -16,6 +16,7 @@ import os
 os.environ.setdefault('KMP_DUPLICATE_LIB_OK', 'TRUE')
 
 import sys
+import json
 from pathlib import Path
 
 import cv2
@@ -117,14 +118,24 @@ def main():
     # ---- 可视化 ----
     vis = np.zeros((H, W * 3, 3), np.uint8)
     vis[:, :W] = (obs * 255).astype(np.uint8)
-    vis[:, W:2 * W] = (r_fix * 255).astype(np.uint8)
-    hm = cv2.applyColorMap(
-        (np.clip(res_fix / 0.25, 0, 1) * 255).astype(np.uint8),
-        cv2.COLORMAP_JET)
-    hm[~m] = 24
-    vis[:, 2 * W:] = cv2.cvtColor(hm, cv2.COLOR_BGR2RGB)
-    cv2.imwrite(str(OUT / 'ar_quant.png'),
-                cv2.cvtColor(vis, cv2.COLOR_RGB2BGR))
+    for panel, residual in enumerate((res_bad, res_fix), start=1):
+        hm = cv2.applyColorMap(
+            (np.clip(residual / 0.25, 0, 1) * 255).astype(np.uint8),
+            cv2.COLORMAP_JET)
+        hm[~m] = 24
+        vis[:, panel * W:(panel + 1) * W] = cv2.cvtColor(
+            hm, cv2.COLOR_BGR2RGB)
+    labels = (
+        'Reference',
+        f'Offset residual: {phot_bad:.3f}',
+        f'Refined residual: {phot_fix:.3f}',
+    )
+    for panel, label in enumerate(labels):
+        cv2.putText(
+            vis, label, (panel * W + 8, 22), cv2.FONT_HERSHEY_SIMPLEX,
+            0.48, (255, 255, 255), 1, cv2.LINE_AA)
+    figure_bgr = cv2.cvtColor(vis, cv2.COLOR_RGB2BGR)
+    cv2.imwrite(str(OUT / 'ar_quant.png'), figure_bgr)
     # CSV
     import csv
     with open(OUT / 'ar_quant.csv', 'w', newline='') as f:
@@ -136,6 +147,19 @@ def main():
         w.writerow(['phot_before', f'{phot_bad:.4f}'])
         w.writerow(['phot_after', f'{phot_fix:.4f}'])
         w.writerow(['occ_edge_acc', f'{occ_acc:.3f}'])
+    with open(OUT / 'summary.json', 'w', encoding='utf-8') as f:
+        json.dump({
+            'protocol': {
+                'controlled_synthetic_overlay': True,
+                'iou_offsets_mm': [float(r[0]) for r in iou_rows],
+                'occlusion_edge_depth_tolerance_mm': 2.0,
+            },
+            'iou': {f'{row[0]:g}mm': float(row[2]) for row in iou_rows},
+            'photometric_residual_before': phot_bad,
+            'photometric_residual_after': phot_fix,
+            'photometric_reduction_fraction': 1 - phot_fix / phot_bad,
+            'single_model_edge_accuracy': occ_acc,
+        }, f, indent=2)
     print(f'\n可视化: {OUT / "ar_quant.png"}')
     print(f'CSV: {OUT / "ar_quant.csv"}')
 

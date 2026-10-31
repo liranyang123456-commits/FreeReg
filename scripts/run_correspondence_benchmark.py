@@ -22,6 +22,7 @@ os.environ.setdefault('KMP_DUPLICATE_LIB_OK', 'TRUE')
 import sys
 import json
 import time
+import csv
 from pathlib import Path
 
 import numpy as np
@@ -39,9 +40,11 @@ from src.render_compare_engine import PoseEngine
 
 BOP = Path(r'D:\bop\lm')
 FRAMES = [15, 157, 323, 476, 607, 741, 914, 1028, 1137, 1231]
+OUT = Path('outputs/correspondence')
 
 
 def main():
+    OUT.mkdir(parents=True, exist_ok=True)
     device = 'cuda'
     sdir = BOP / 'test' / '000001'
     cams = json.load(open(sdir / 'scene_camera.json'))
@@ -126,9 +129,11 @@ def main():
             row['sift'] = (f'{st_s["n_good"]}对/{st_s["n_inliers"]}内/'
                            f'{rot_s:.0f}°/{dt_s * 1000:.0f}ms')
             row['sift_rot'] = rot_s
+            row['sift_ms'] = dt_s * 1000
         else:
             row['sift'] = f'失败({st_s.get("error", "")[:12]})'
             row['sift_rot'] = np.nan
+            row['sift_ms'] = dt_s * 1000
 
         # M3 FPFH
         scene_pts, _, _ = backproject_depth(depth, K, mask=mask)
@@ -142,6 +147,7 @@ def main():
         rot_f, _ = pose_errors(T_f2, T_gt)
         row['fpfh'] = f'{fit:.2f}/{rot_f:.0f}°/{dt_f * 1000:.0f}ms'
         row['fpfh_rot'] = rot_f
+        row['fpfh_ms'] = dt_f * 1000
 
         # M4 渲染比较
         t0 = time.time()
@@ -150,6 +156,7 @@ def main():
         rot_rc, _ = pose_errors(T_rc, T_gt)
         row['rc'] = f'{rot_rc:.0f}°/{dt_rc * 1000:.0f}ms'
         row['rc_rot'] = rot_rc
+        row['rc_ms'] = dt_rc * 1000
 
         # M5 深度提升+ICP (多起点)
         from src.pose_estimation import multistart_icp_register
@@ -160,6 +167,7 @@ def main():
         rot_m, _ = pose_errors(T_m, T_gt)
         row['ms'] = f'{rot_m:.0f}°/{dt_m * 1000:.0f}ms'
         row['ms_rot'] = rot_m
+        row['ms_ms'] = dt_m * 1000
 
         rows.append(row)
         print(f'{fi:>6} | {row["sift"]:>22} | {row["fpfh"]:>14} | '
@@ -177,6 +185,23 @@ def main():
                       ('M5 深度提升+ICP', 'ms_rot')]:
         m, s = stat(key)
         print(f'  {name}: 平均rot_err={m:.1f}°  成功率={s:.0%}')
+    numeric_fields = [
+        'frame', 'sift_rot', 'sift_ms', 'fpfh_rot', 'fpfh_ms',
+        'rc_rot', 'rc_ms', 'ms_rot', 'ms_ms',
+    ]
+    with open(OUT / 'correspondence_metrics.csv', 'w', newline='',
+              encoding='utf-8') as f:
+        w = csv.DictWriter(f, fieldnames=numeric_fields)
+        w.writeheader()
+        w.writerows({k: row.get(k, np.nan) for k in numeric_fields}
+                    for row in rows)
+    with open(OUT / 'oracle_summary.csv', 'w', newline='',
+              encoding='utf-8') as f:
+        w = csv.writer(f)
+        w.writerow(['method', 'rotation_error_mean_deg'])
+        w.writerow(['oracle_kabsch', f'{np.mean(errs_k):.9f}'])
+        w.writerow(['oracle_pnp', f'{np.mean(errs_p):.9f}'])
+    print(f'结构化结果: {OUT / "correspondence_metrics.csv"}')
     print('=' * 76)
 
 

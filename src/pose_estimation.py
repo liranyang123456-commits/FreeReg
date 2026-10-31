@@ -11,7 +11,6 @@
   2D↔3D : pnp_ransac (EPnP + RANSAC + LM 精化)
 
 依赖: numpy, opencv(cv2), torch(NN 加速, CUDA 可选)
-
 """
 import numpy as np
 import cv2

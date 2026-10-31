@@ -166,7 +166,6 @@ def make_figure(rows, rank, n_ctrl):
     ax.grid(alpha=0.3)
     fig.tight_layout()
     fig.savefig(OUT / 'observability_curve.png', dpi=200)
-***REMOVED***
     print('saved figure')
 
 

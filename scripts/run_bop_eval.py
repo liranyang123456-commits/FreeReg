@@ -65,9 +65,26 @@ def main():
     ap.add_argument('--n_refs', type=int, default=8,
                     help='hybrid 引擎的 SIFT 参考帧数 (取评估集之外)')
     ap.add_argument('--out', default='outputs/bop_eval_results.csv')
+    ap.add_argument('--seed', type=int, default=0,
+                    help='随机种子 (场景/模型子采样, Open3D RANSAC, torch); '
+                         '审计运行为 0, 多次运行用于 mean±SD')
+    ap.add_argument('--use_contour', action=argparse.BooleanOptionalAction,
+                    default=True,
+                    help='hybrid 仲裁是否使用轮廓 chamfer/IoU '
+                         '(--no-use_contour = 仅深度一致性仲裁消融)')
     args = ap.parse_args()
 
-    cfg = RegConfig(device=args.device)
+    # 统一种子: 使多次运行 (seed=0,1,2,...) 可复现
+    import random as _random
+    import torch as _torch
+    import open3d as _o3d
+    _random.seed(args.seed)
+    np.random.seed(args.seed)
+    _torch.manual_seed(args.seed)
+    cv2.setRNGSeed(args.seed)
+    _o3d.utility.random.seed(args.seed)
+
+    cfg = RegConfig(device=args.device, seed=args.seed)
     out_path = Path(args.out)
     out_path.parent.mkdir(parents=True, exist_ok=True)
 
@@ -191,7 +208,7 @@ def main():
                         str(sdir / 'rgb' / f'{fi:06d}.png')),
                         cv2.COLOR_BGR2RGB)
                     scene_pts, _, _ = backproject_depth(depth, K, mask=mask)
-                    sel_s = np.random.default_rng(0).choice(
+                    sel_s = np.random.default_rng(args.seed).choice(
                         len(scene_pts), min(20000, len(scene_pts)),
                         replace=False)
                     model_icp = m['pts'][::max(1, len(m['pts']) // 3000)]
@@ -213,7 +230,8 @@ def main():
                         res = {'T': None, 'stats': {'error': 'no candidates'}}
                     else:
                         T_est, bs, _sc = arbitrate_poses(
-                            [c[1] for c in cands], m['pts'], depth, K, mask)
+                            [c[1] for c in cands], m['pts'], depth, K, mask,
+                            device=args.device, use_contour=args.use_contour)
                         res = {'T': T_est,
                                'stats': {'rmse': bs,
                                          'winner': cands[int(np.argmax(
@@ -249,6 +267,9 @@ def main():
     print('\n' + '=' * 70)
     print(f'BOP LM 评测汇总: 有效 {len(ok_rows)} 样本, 失败 {n_fail}'
           + (f' | SIFT成功 {sift_stat["sift"]}, 几何兜底 {sift_stat["fallback"]}'
+             if args.engine == 'hybrid' else '')
+          + f' | seed={args.seed}'
+          + (f' | contour={"on" if args.use_contour else "off"}'
              if args.engine == 'hybrid' else ''))
     print('=' * 70)
     if ok_rows:

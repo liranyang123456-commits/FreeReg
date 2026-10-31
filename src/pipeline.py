@@ -16,7 +16,6 @@
 "位姿引擎", 滤波/RTW/渲染/评测环节不动。
 
 依赖: numpy, opencv, torch, open3d
-
 """
 from dataclasses import dataclass, field
 import numpy as np
@@ -72,8 +71,13 @@ def load_mesh_points(path: str, n_points: int = 20000, seed: int = 0):
         normals: (N,3) float64 (单位向量)
     """
     import open3d as o3d
+    cv2.setRNGSeed(int(seed))
     mesh = o3d.io.read_triangle_mesh(path)
     if len(mesh.triangles) > 0:
+        # Open3D uses its own global RNG for mesh sampling; NumPy seeding does
+        # not affect it.  Honor this function's seed argument so independent
+        # evidence runs sample the same surface points.
+        o3d.utility.random.seed(int(seed))
         pcd = mesh.sample_points_uniformly(number_of_points=n_points)
     else:  # 纯点云网格
         pcd = o3d.geometry.PointCloud()

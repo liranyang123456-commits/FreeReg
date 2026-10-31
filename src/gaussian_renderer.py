@@ -18,7 +18,6 @@ Kerbl et al. SIGGRAPH 2023 的参考实现 (自包含, 免 CUDA 扩展编译):
 → 动态场景渲染 (锚点 = FFD 控制点), 见 scripts/run_4dgs_eval.py。
 
 依赖: torch
-
 """
 import numpy as np
 import torch

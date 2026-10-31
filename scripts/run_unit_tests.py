@@ -20,9 +20,11 @@ os.environ.setdefault('KMP_DUPLICATE_LIB_OK', 'TRUE')  # Windows torch/numpy Ope
 
 import sys
 import time
+import json
 from pathlib import Path
 
 import numpy as np
+from scipy.linalg import expm
 
 sys.path.insert(0, str(Path(__file__).resolve().parents[1]))
 
@@ -31,7 +33,11 @@ from src.geometry import (exp_se3, log_se3, exp_so3, log_so3, make_T,
 from src.pose_estimation import (kabsch_umeyama, pnp_ransac,
                                  multistart_icp_register)
 from src.metrics import pose_errors, reproj_rmse, pixel_jitter_rms
-from src.se3_kalman_filter import SE3KalmanFilter
+from src.se3_kalman_filter import (
+    SE3KalmanFilter,
+    exp_se3 as kalman_exp_se3,
+    log_se3 as kalman_log_se3,
+)
 
 RESULTS = []
 
@@ -55,6 +61,39 @@ def t1_se3_roundtrip():
         errs.append(err)
     e = max(errs)
     report('exp∘log 往返', e < 1e-10, f'max_err={e:.2e}')
+
+    # 独立参照: 直接对 4x4 se(3) 矩阵做矩阵指数，防止 exp/log 使用同一
+    # 错误左雅可比时仍然“往返通过”。
+    ref_errs = []
+    for _ in range(100):
+        xi = rng.normal(0, 0.5, 6)
+        Xi = np.zeros((4, 4))
+        Xi[:3, :3] = np.array([
+            [0.0, -xi[5], xi[4]],
+            [xi[5], 0.0, -xi[3]],
+            [-xi[4], xi[3], 0.0],
+        ])
+        Xi[:3, 3] = xi[:3]
+        ref_errs.append(np.linalg.norm(exp_se3(xi) - expm(Xi)))
+    e_ref = max(ref_errs)
+    report('SE(3) exp 独立矩阵指数参照', e_ref < 1e-10,
+           f'max_err={e_ref:.2e}')
+
+    near_pi_errors = []
+    for axis in (
+        np.array([1.0, 0.0, 0.0]),
+        np.array([1.0, 2.0, -3.0]) / np.sqrt(14.0),
+    ):
+        R = exp_so3(axis * (np.pi - 1e-9))
+        R_roundtrip = exp_so3(log_so3(R))
+        near_pi_errors.append(np.linalg.norm(R_roundtrip - R))
+        T = make_T(R, np.array([1.0, -2.0, 3.0]))
+        near_pi_errors.append(
+            np.linalg.norm(kalman_exp_se3(kalman_log_se3(T)) - T)
+        )
+    e_pi = max(near_pi_errors)
+    report('SO(3) 对数映射近 pi 稳定性', e_pi < 1e-7,
+           f'max_R_err={e_pi:.2e}')
 
 
 # ============================================================
@@ -117,8 +156,12 @@ def t4_icp_multistart():
     from src.pipeline import load_mesh_points
     model_path = Path(r'D:\bop\lm\models\obj_000001.ply')
     device = 'cuda'
+    deterministic_sampling = True
     if model_path.exists():
-        pts, _ = load_mesh_points(str(model_path), n_points=3000)
+        pts, _ = load_mesh_points(str(model_path), n_points=3000, seed=0)
+        pts_repeat, _ = load_mesh_points(
+            str(model_path), n_points=3000, seed=0)
+        deterministic_sampling = np.array_equal(pts, pts_repeat)
         src_note = 'BOP obj_000001'
     else:
         rng = np.random.default_rng(3)
@@ -141,10 +184,11 @@ def t4_icp_multistart():
                                         trim_fine=0.8)
     dt = time.time() - t0
     rot_deg, trans_mm = pose_errors(T_est, T_gt)
-    ok = rot_deg < 5.0 and trans_mm < 60.0
+    ok = (deterministic_sampling and rot_deg < 5.0 and trans_mm < 60.0)
     report(f'多起点ICP ({src_note})', ok,
            f'rot_err={rot_deg:.2f}° trans_err={trans_mm:.1f}mm '
-           f'rmse={st["rmse"]:.2f}mm time={dt:.2f}s')
+           f'rmse={st["rmse"]:.2f}mm deterministic_mesh_sampling='
+           f'{deterministic_sampling} time={dt:.2f}s')
 
 
 # ============================================================
@@ -290,4 +334,22 @@ if __name__ == '__main__':
     n_pass = sum(1 for _, ok, _ in RESULTS if ok)
     print(f'结果: {n_pass}/{len(RESULTS)} 通过, 总耗时 {time.time() - t0:.1f}s')
     print('=' * 64)
+    out_dir = Path('outputs/unit_tests')
+    out_dir.mkdir(parents=True, exist_ok=True)
+    payload = {
+        'seed_policy': (
+            'numpy.default_rng fixed per test; Open3D mesh sampling seeded '
+            'through load_mesh_points'
+        ),
+        'n_pass': n_pass,
+        'n_total': len(RESULTS),
+        'elapsed_s': time.time() - t0,
+        'results': [
+            {'name': name, 'passed': bool(ok), 'detail': detail}
+            for name, ok, detail in RESULTS
+        ],
+    }
+    with open(out_dir / 'unit_test_results.json', 'w', encoding='utf-8') as f:
+        json.dump(payload, f, ensure_ascii=False, indent=2)
+    print(f'结构化结果: {out_dir / "unit_test_results.json"}')
     sys.exit(0 if n_pass == len(RESULTS) else 1)

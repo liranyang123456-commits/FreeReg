@@ -19,6 +19,7 @@ os.environ.setdefault('KMP_DUPLICATE_LIB_OK', 'TRUE')
 import sys
 import json
 import time
+import argparse
 from pathlib import Path
 
 import numpy as np
@@ -94,6 +95,10 @@ def jitter_of(poses_list, gt_list, probe_pts, K):
 
 
 def main():
+    ap = argparse.ArgumentParser()
+    ap.add_argument('--force', action='store_true',
+                    help='ignore cached FreeReg poses and rerun registration')
+    args = ap.parse_args()
     OUT.mkdir(parents=True, exist_ok=True)
     device = 'cuda' if torch.cuda.is_available() else 'cpu'
     print('=' * 66)
@@ -141,7 +146,7 @@ def main():
     ours_poses, kf_poses = {}, {}
     t0_all = time.time()
     cache = dict(np.load(POSE_CACHE, allow_pickle=True)) \
-        if POSE_CACHE.exists() else None
+        if POSE_CACHE.exists() and not args.force else None
     for k in keys:
         fi = int(k)
         K = np.array(cams[k]['cam_K']).reshape(3, 3)
@@ -242,6 +247,24 @@ def main():
                     f'{rot_ours.mean():.3f}'])
         w.writerow(['ours+KF', f'{j_kf:.3f}', f'{adds_kf.mean():.3f}',
                     f'{(adds_kf < 10).mean():.3f}', f'{rot_kf.mean():.3f}'])
+    with open(OUT / 'jitter_compare_frames.csv', 'w', newline='',
+              encoding='utf-8') as f:
+        w = csv.writer(f)
+        w.writerow(['frame', 'adds_fp_mm', 'adds_ours_mm', 'adds_filtered_mm',
+                    'rot_fp_deg', 'rot_ours_deg', 'rot_filtered_deg'])
+        for fi in fs_common:
+            g = gts[str(fi)][0]
+            T_gt = make_T(np.array(g['cam_R_m2c']).reshape(3, 3),
+                          np.array(g['cam_t_m2c']).reshape(3))
+            w.writerow([
+                fi,
+                f'{add_s_error(eval_pts, fp_poses[fi], T_gt):.9f}',
+                f'{add_s_error(eval_pts, ours_poses[fi], T_gt):.9f}',
+                f'{add_s_error(eval_pts, kf_poses[fi], T_gt):.9f}',
+                f'{pose_errors(fp_poses[fi], T_gt)[0]:.9f}',
+                f'{pose_errors(ours_poses[fi], T_gt)[0]:.9f}',
+                f'{pose_errors(kf_poses[fi], T_gt)[0]:.9f}',
+            ])
     print(f'CSV: {OUT / "jitter_compare.csv"}')
     print('=' * 66)
 

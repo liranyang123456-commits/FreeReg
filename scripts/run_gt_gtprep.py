@@ -36,8 +36,19 @@ from src.centerline import (airway_centerline_3d, lumen_skeleton_2d,
                             skeleton_junctions_2d)
 from src.ct_loader import CTVolume
 
-VIDEO = (r'F:\省医-数据\省医-数据\ION患者整理\P001\术中视频'
-         r'\Video_screenshot_Henan1\ion_video_2021-10-26_03-33-50_L.mp4')
+CLINICAL_ROOT = Path(os.environ.get(
+    'FREEREG_ION_ROOT', r'F:\省医-数据\省医-数据\ION患者整理'))
+PRIVATE_CASES = sorted(path for path in CLINICAL_ROOT.glob('001*')
+                       if path.is_dir())
+PRIVATE_CASE = (PRIVATE_CASES[0] if PRIVATE_CASES else
+                CLINICAL_ROOT / '__missing__')
+VIDEO_MATCHES = (sorted(PRIVATE_CASE.rglob('*_L.mp4'))
+                 if PRIVATE_CASE.is_dir() else [])
+VIDEO = os.environ.get(
+    'FREEREG_BRONCHOSCOPY_VIDEO',
+    str(VIDEO_MATCHES[0] if VIDEO_MATCHES else
+        PRIVATE_CASE / '__missing__.mp4'),
+)
 MASK_CACHE = Path('outputs/ct/airway_mask.npz')
 PTS_CACHE = Path('outputs/ct/airway_cache.npz')
 OUT = Path('outputs/gt_pkg')

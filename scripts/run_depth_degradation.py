@@ -21,6 +21,7 @@ import os
 os.environ.setdefault('KMP_DUPLICATE_LIB_OK', 'TRUE')
 
 import csv
+import json
 import sys
 import time
 from pathlib import Path
@@ -38,7 +39,12 @@ from src.centerline import lumen_skeleton_2d, register_centerline
 from src.metrics import pose_errors
 import torch
 
-P1 = r'F:\省医-数据\省医-数据\ION患者整理\P001'
+CLINICAL_ROOT = Path(os.environ.get(
+    'FREEREG_ION_ROOT', r'F:\省医-数据\省医-数据\ION患者整理'))
+P1_MATCHES = sorted(path for path in CLINICAL_ROOT.glob('001*')
+                    if path.is_dir())
+P1 = str(P1_MATCHES[0] if P1_MATCHES else
+         CLINICAL_ROOT / '__missing__')
 CACHE = Path('outputs/ct/airway_cache.npz')
 OUT = Path('outputs/ct/degradation')
 N_FRAMES = 40
@@ -214,7 +220,8 @@ def run_tier(tier, model, device):
 
     tres = np.array(tres)
     return dict(mean=float(tres.mean()), median=float(np.median(tres)),
-                succ=float((tres < 10).mean()), n=len(tres))
+                succ=float((tres < 10).mean()), n=len(tres),
+                per_frame=tres.tolist())
 
 
 def main():
@@ -243,7 +250,23 @@ def main():
         for k, v in rows.items():
             w.writerow([k, f"{v['mean']:.3f}", f"{v['median']:.3f}",
                         f"{v['succ']:.3f}"])
+    with open(OUT / 'degradation_frames.csv', 'w', newline='') as f:
+        w = csv.writer(f)
+        w.writerow(['tier', 'frame', 'tre_mm'])
+        for tier, result in rows.items():
+            w.writerows((tier, frame, f'{tre:.9f}') for frame, tre in
+                        enumerate(result['per_frame']))
+    serializable = {
+        tier: {k: v for k, v in result.items() if k != 'per_frame'}
+        for tier, result in rows.items()
+    }
+    with open(OUT / 'degradation_summary.json', 'w', encoding='utf-8') as f:
+        json.dump({
+            'protocol': {'n_frames_requested': N_FRAMES, 'seed': 1},
+            'tiers': serializable,
+        }, f, indent=2)
     print(f'\nCSV: {OUT / "degradation.csv"}')
+    print(f'逐帧: {OUT / "degradation_frames.csv"}')
     print('=' * 62)
 
 

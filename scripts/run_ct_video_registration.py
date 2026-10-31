@@ -1,6 +1,6 @@
 # -*- coding: utf-8 -*-
 """
-E1: CT-视频注册完整评测 (省医患者 001, 合成支气管镜飞行视频)
+E1: CT-视频注册完整评测 (私有CT轨迹, 合成支气管镜飞行视频)
 ==============================================================
 
 链路:
@@ -38,7 +38,12 @@ from src.metrics import pose_errors, pixel_jitter_deviation
 from src.se3_kalman_filter import SE3KalmanFilter, SE3KalmanConfig
 import torch
 
-P1 = r'F:\省医-数据\省医-数据\ION患者整理\P001'
+CLINICAL_ROOT = Path(os.environ.get(
+    'FREEREG_ION_ROOT', r'F:\省医-数据\省医-数据\ION患者整理'))
+P1_MATCHES = sorted(path for path in CLINICAL_ROOT.glob('001*')
+                    if path.is_dir())
+P1 = str(P1_MATCHES[0] if P1_MATCHES else
+         CLINICAL_ROOT / '__missing__')
 CACHE = Path('outputs/ct/airway_cache.npz')
 OUT = Path('outputs/ct')
 N_FRAMES = 40
@@ -75,7 +80,7 @@ def main():
     OUT.mkdir(parents=True, exist_ok=True)
     device = 'cuda' if torch.cuda.is_available() else 'cpu'
     print('=' * 66)
-    print('E1: CT-视频注册评测 (省医001, 合成飞行视频40帧)')
+    print('E1: CT-视频注册评测 (私有CT轨迹, 合成飞行视频40帧)')
     print('=' * 66)
 
     model = load_model_cached()

@@ -23,6 +23,8 @@ os.environ.setdefault('KMP_DUPLICATE_LIB_OK', 'TRUE')
 
 import sys
 import time
+import csv
+import json
 from pathlib import Path
 
 import numpy as np
@@ -44,6 +46,7 @@ import torch
 BOP_MODEL = Path(r'D:\bop\lm\models\obj_000008.ply')
 K = np.array([[572.4, 0, 325.3], [0, 573.6, 242.0], [0, 0, 1.0]])
 H, W = 480, 640
+OUT = Path('outputs/temporal')
 
 
 def kalman_mm(meas_pos=5.0, meas_rot=5e-3):
@@ -109,39 +112,51 @@ def jitter_probe_points(model, n=9):
 # ============================================================
 # Part A: 受控轨迹 + 合成测量噪声
 # ============================================================
-def part_a(gt_poses, probe_pts, eval_pts):
-    print('\n--- Part A: 平滑轨迹 + σ=5mm/3mrad 逐帧测量噪声 ---')
-    rng = np.random.default_rng(0)
+def part_a(gt_poses, probe_pts, eval_pts, seed=0):
+    print(f'\n--- Part A: 平滑轨迹 + σ=5mm/3mrad 逐帧测量噪声 (seed={seed}) ---')
+    rng = np.random.default_rng(seed)
     scale = np.array([5, 5, 5, 0.003, 0.003, 0.003])
     meas = [T @ exp_se3(rng.normal(0, 1, 6) * scale) for T in gt_poses]
 
     kf = SE3KalmanFilter(kalman_mm())
+    t0 = time.perf_counter()
     smooth = [kf.update(T, dt=1.0) for T in meas]  # dt 以帧为单位
+    t_filter = (time.perf_counter() - t0) / len(meas)
 
     j_meas = multipoint_jitter_dev(meas, gt_poses, probe_pts)
     j_smooth = multipoint_jitter_dev(smooth, gt_poses, probe_pts)
-    e_meas = np.mean([add_s_error(eval_pts, Tm, Tg)
-                      for Tm, Tg in zip(meas, gt_poses)])
-    e_smooth = np.mean([add_s_error(eval_pts, Ts, Tg)
-                        for Ts, Tg in zip(smooth, gt_poses)])
+    e_meas_frames = np.array([add_s_error(eval_pts, Tm, Tg)
+                              for Tm, Tg in zip(meas, gt_poses)])
+    e_smooth_frames = np.array([add_s_error(eval_pts, Ts, Tg)
+                                for Ts, Tg in zip(smooth, gt_poses)])
+    e_meas = float(e_meas_frames.mean())
+    e_smooth = float(e_smooth_frames.mean())
     print(f'  抖动偏差RMS:   测量={j_meas:.3f}px  平滑={j_smooth:.3f}px  '
           f'降低={100 * (1 - j_smooth / j_meas):.1f}%')
     print(f'  ADD-S(相对GT): 测量={e_meas:.3f}mm  平滑={e_smooth:.3f}mm')
+    print(f'  滤波耗时: {t_filter * 1000:.3f}ms/frame')
     print(f'  重定位次数: {kf.reloc_count}')
+    with open(OUT / 'part_a_frames.csv', 'w', newline='', encoding='utf-8') as f:
+        w = csv.writer(f)
+        w.writerow(['frame', 'adds_measured_mm', 'adds_filtered_mm'])
+        w.writerows((i, float(a), float(b)) for i, (a, b) in
+                    enumerate(zip(e_meas_frames, e_smooth_frames)))
     return dict(j_meas=j_meas, j_smooth=j_smooth,
-                e_meas=e_meas, e_smooth=e_smooth, reloc=kf.reloc_count)
+                e_meas=e_meas, e_smooth=e_smooth, t_filter=t_filter,
+                reloc=kf.reloc_count)
 
 
 # ============================================================
 # Part B: 端到端虚拟视频跟踪
 # ============================================================
-def part_b(model, model_icp, eval_pts, probe_pts, device):
-    print('\n--- Part B: 端到端虚拟视频 (渲染深度+噪声 → 逐帧跟踪) ---')
+def part_b(model, model_icp, eval_pts, probe_pts, device, seed=1,
+           cfg_seed=0):
+    print(f'\n--- Part B: 端到端虚拟视频 (渲染深度+噪声 → 逐帧跟踪) (seed={seed}) ---')
     gt_poses = make_orbit_trajectory(100)
-    cfg = RegConfig(device=device)
+    cfg = RegConfig(device=device, seed=cfg_seed)
     # ICP 引擎实测噪声: 平移波动 ~3mm, 旋转波动 ~1-2° (见 _debug_temporal)
     kf = SE3KalmanFilter(kalman_mm(meas_pos=3.0, meas_rot=0.02))
-    rng = np.random.default_rng(1)
+    rng = np.random.default_rng(seed)
 
     white = np.ones((len(model), 3))
     meas_poses, smooth_poses = [], []
@@ -192,6 +207,13 @@ def part_b(model, model_icp, eval_pts, probe_pts, device):
     print(f'  跟踪耗时: 帧0(全局)={times[0]:.2f}s  后续帧mean='
           f'{np.mean(times[1:]) * 1000:.0f}ms  '
           f'拒绝={kf.reject_count}次 重定位={kf.reloc_count}次')
+    with open(OUT / 'part_b_frames.csv', 'w', newline='', encoding='utf-8') as f:
+        w = csv.writer(f)
+        w.writerow(['frame', 'adds_measured_mm', 'adds_filtered_mm',
+                    'reproj_measured_px', 'reproj_filtered_px', 'time_s'])
+        w.writerows((i, float(a), float(b), float(c), float(d), float(t))
+                    for i, (a, b, c, d, t) in enumerate(
+                        zip(e_meas, e_smooth, r_meas, r_smooth, times)))
     return dict(j_meas=j_meas, j_smooth=j_smooth,
                 e_meas=float(e_meas.mean()), e_smooth=float(e_smooth.mean()),
                 r_meas=float(np.median(r_meas)),
@@ -201,8 +223,20 @@ def part_b(model, model_icp, eval_pts, probe_pts, device):
 
 
 def main():
+    global OUT
+    import argparse
+    ap = argparse.ArgumentParser()
+    ap.add_argument('--seed', type=int, default=0,
+                    help='噪声种子偏移: Part A 用 seed, Part B 用 seed+1 '
+                         '(审计运行 seed=0 → 0/1)')
+    ap.add_argument('--out', default=str(OUT))
+    args = ap.parse_args()
+    OUT = Path(args.out)
+    seed_a, seed_b = args.seed, args.seed + 1
+    torch.manual_seed(args.seed)
     device = 'cuda' if torch.cuda.is_available() else 'cpu'
     print('=' * 66)
+    OUT.mkdir(parents=True, exist_ok=True)
     print('视频时序一致性评测: SE(3) Kalman (真实运动剖面 + 真实模型)')
     print('=' * 66)
 
@@ -213,8 +247,9 @@ def main():
     probe_pts = jitter_probe_points(model)
 
     gt_poses = make_orbit_trajectory(100)
-    ra = part_a(gt_poses, probe_pts, eval_pts)
-    rb = part_b(model, model_icp, eval_pts, probe_pts, device)
+    ra = part_a(gt_poses, probe_pts, eval_pts, seed=seed_a)
+    rb = part_b(model, model_icp, eval_pts, probe_pts, device, seed=seed_b,
+                cfg_seed=args.seed)
 
     print('\n' + '=' * 66)
     print('汇总:')
@@ -226,6 +261,28 @@ def main():
           f'ADD-S {rb["e_meas"]:.2f}mm → {rb["e_smooth"]:.2f}mm, '
           f'跟踪 {rb["t_track"] * 1000:.0f}ms/帧')
     print('=' * 66)
+    with open(OUT / 'summary.json', 'w', encoding='utf-8') as f:
+        json.dump({
+            'protocol': {
+                'seed_part_a': seed_a, 'seed_part_b': seed_b,
+                'n_frames_part_a': 100, 'n_frames_part_b': 100,
+                'model': str(BOP_MODEL),
+                'gate': {
+                    'score': 'norm(translation)/sigma_p + '
+                             'norm(rotation)/sigma_R',
+                    'threshold': 10.0,
+                    'max_prediction_only_rejections_before_reset': 5,
+                    'velocity_damping': 0.98,
+                    'part_a_sigma_p_mm': 5.0,
+                    'part_a_sigma_R_rad': 0.005,
+                    'part_b_sigma_p_mm': 3.0,
+                    'part_b_sigma_R_rad': 0.02,
+                },
+            },
+            'part_a': ra,
+            'part_b': rb,
+        }, f, indent=2)
+    print(f'结构化结果: {OUT / "summary.json"}')
 
 
 if __name__ == '__main__':

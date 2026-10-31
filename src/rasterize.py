@@ -14,7 +14,6 @@ torch z-buffer 点泼溅光栅化器 (自包含, CUDA 加速)
   官方 3DGS CUDA 光栅化器, 管线上游(注册/滤波)不受影响。
 
 依赖: torch (CUDA 可选)
-
 """
 import torch
 

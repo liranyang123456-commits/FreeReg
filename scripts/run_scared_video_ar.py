@@ -1,16 +1,17 @@
 # -*- coding: utf-8 -*-
 """
 M2: SCARED 给定相机轨迹受控扰动时序滤波与深度感知 AR 合成评测
-============================================
+=============================================================
+（注：使用数据集提供的相机轨迹加受控位姿噪声与漂移测试滤波与显示稳定性，非盲内镜位姿跟踪）
 
 真实数据链路:
-  SCARED rgb.mp4 (197帧, 25fps) + frame_data 相机轨迹 (c2w)
+  SCARED rgb.mp4 (197帧, 25fps) + frame_data 给定相机轨迹 (c2w)
   + point_cloud.obj (真实场景几何, 遮挡合成代理)
   → 虚拟模型锚定到组织表面 → 逐帧 AR 融合 (深度感知)
   → 输出 AR 视频 + 三联帧
 
 时序评测:
-  GT轨迹(平滑) vs 含噪轨迹(模拟VIO噪声+漂移) vs Kalman平滑
+  给定 GT 轨迹 vs 受控扰动轨迹 (注入位姿噪声+漂移) vs SE(3) Kalman 滤波平滑
   → 多点像素抖动偏差 (jitter deviation)
 
 单位注意: SCARED 位姿平移为米, 点云/深度为毫米 → 统一转毫米。
@@ -27,6 +28,7 @@ import sys
 import json
 import tarfile
 import time
+import csv
 from pathlib import Path
 
 import numpy as np
@@ -43,7 +45,19 @@ from src.se3_kalman_filter import SE3KalmanFilter, SE3KalmanConfig
 
 import torch
 
-SCARED = Path(r'E:\MIS_Datasets\SCARED\dataset_1\keyframe_1')
+def _resolve_scared_root() -> Path:
+    """SCARED dataset_1/keyframe_1 root: env override, then known local copies."""
+    candidates = [os.environ.get('FREEREG_SCARED_ROOT', ''),
+                  r'E:\MIS_Datasets\SCARED\dataset_1\keyframe_1',
+                  r'E:\World_Agent_Enoscopy\datasets\SCARED\dataset_1\keyframe_1',
+                  r'G:\Endo_Visual_tracking\dataset_1\dataset_1\keyframe_1']
+    for c in candidates:
+        if c and (Path(c) / 'data' / 'frame_data.tar.gz').exists():
+            return Path(c)
+    return Path(candidates[1])
+
+
+SCARED = _resolve_scared_root()
 OUT = Path('outputs/scared')
 N_FRAMES = 197
 IMG_TOP_HALF = True   # rgb.mp4 上半为左目 (1280x1024)
@@ -87,10 +101,19 @@ def frame_eye(frame):
 
 
 def main():
+    global OUT
+    import argparse
+    ap = argparse.ArgumentParser()
+    ap.add_argument('--seed', type=int, default=0,
+                    help='受控位姿噪声种子 (审计运行为 0)')
+    ap.add_argument('--out', default=str(OUT))
+    args = ap.parse_args()
+    OUT = Path(args.out)
+    seed = args.seed
     OUT.mkdir(parents=True, exist_ok=True)
     device = 'cuda' if torch.cuda.is_available() else 'cpu'
     print('=' * 66)
-    print('M2: SCARED 给定轨迹受控扰动滤波与深度感知 AR 合成 (197帧)')
+    print(f'M2: SCARED 给定轨迹受控扰动滤波与深度感知 AR 合成 (197帧) seed={seed}')
     print('=' * 66)
 
     K, poses_c2w = load_scared()
@@ -133,7 +156,9 @@ def main():
     writer = None
     t_render = time.time()
     n_done = 0
+    render_times = []
     for i in range(N_FRAMES):
+        frame_t0 = time.time()
         ok, fr = cap.read()
         if not ok:
             break
@@ -163,6 +188,7 @@ def main():
         out_u8 = cv2.cvtColor((np.clip(comp, 0, 1) * 255).astype(np.uint8),
                               cv2.COLOR_RGB2BGR)
         writer.write(out_u8)
+        render_times.append(time.time() - frame_t0)
         n_done += 1
         if i in (30, 100, 160):
             tri = np.concatenate([
@@ -178,7 +204,7 @@ def main():
 
     # ---------- 时序评测: 噪声轨迹 + Kalman ----------
     print('\n时序评测: GT轨迹 vs 含噪轨迹(VIO噪声+随机游走漂移) vs Kalman')
-    rng = np.random.default_rng(0)
+    rng = np.random.default_rng(seed)
     noisy = []
     for i, T in enumerate(poses_cw):
         # 有界慢漂移 (模拟 VIO 漂移-回环校正循环, 振幅 2mm/0.6°)
@@ -209,17 +235,56 @@ def main():
             out.append(np.stack([u, v], -1))
         return out
 
+    uv_gt_all = uv_seq(poses_cw)
+    uv_raw_all = uv_seq(noisy)
+    uv_sm_all = uv_seq(smooth)
     devs_raw, devs_sm = [], []
     for j in range(len(probe_w)):
-        uv_gt = np.array([uv_seq(poses_cw)[i][j] for i in range(n_done)])
-        uv_raw = np.array([uv_seq(noisy)[i][j] for i in range(n_done)])
-        uv_sm = np.array([uv_seq(smooth)[i][j] for i in range(n_done)])
+        uv_gt = np.array([uv_gt_all[i][j] for i in range(n_done)])
+        uv_raw = np.array([uv_raw_all[i][j] for i in range(n_done)])
+        uv_sm = np.array([uv_sm_all[i][j] for i in range(n_done)])
         devs_raw.append(pixel_jitter_deviation(uv_raw, uv_gt))
         devs_sm.append(pixel_jitter_deviation(uv_sm, uv_gt))
     j_raw, j_sm = float(np.mean(devs_raw)), float(np.mean(devs_sm))
     print(f'  抖动偏差(9探针均值): 含噪={j_raw:.3f}px  '
           f'Kalman={j_sm:.3f}px  ↓{100 * (1 - j_sm / j_raw):.1f}%')
     print(f'  重定位={kf.reloc_count} 拒绝={kf.reject_count}')
+    with open(OUT / 'temporal_probe_metrics.csv', 'w', newline='',
+              encoding='utf-8') as f:
+        w = csv.writer(f)
+        w.writerow(['probe', 'jitter_raw_px', 'jitter_filtered_px'])
+        w.writerows((i, f'{a:.9f}', f'{b:.9f}') for i, (a, b) in
+                    enumerate(zip(devs_raw, devs_sm)))
+    with open(OUT / 'render_frame_times.csv', 'w', newline='',
+              encoding='utf-8') as f:
+        w = csv.writer(f)
+        w.writerow(['frame', 'time_s'])
+        w.writerows((i, f'{value:.9f}') for i, value in
+                    enumerate(render_times))
+    with open(OUT / 'summary.json', 'w', encoding='utf-8') as f:
+        json.dump({
+            'protocol': {
+                'seed': seed, 'requested_frames': N_FRAMES,
+                'completed_frames': n_done, 'n_probe_points': len(probe_w),
+                'gate': {
+                    'score': 'norm(translation)/sigma_p + '
+                             'norm(rotation)/sigma_R',
+                    'threshold': cfg.innovation_threshold,
+                    'max_prediction_only_rejections_before_reset':
+                        cfg.max_consecutive_reject,
+                    'velocity_damping': cfg.velocity_damping,
+                    'sigma_p_mm': cfg.meas_noise_pos,
+                    'sigma_R_rad': cfg.meas_noise_rot,
+                },
+            },
+            'jitter_raw_px': j_raw,
+            'jitter_filtered_px': j_sm,
+            'jitter_reduction_fraction': 1 - j_sm / j_raw,
+            'relocations': kf.reloc_count,
+            'rejections': kf.reject_count,
+            'render_time_mean_ms': float(np.mean(render_times) * 1000),
+        }, f, indent=2)
+    print(f'  结构化结果: {OUT / "summary.json"}')
     print('=' * 66)
 
 

@@ -17,7 +17,6 @@
   - 遮挡正确率 (深度合成决策与真值一致率)
 
 依赖: numpy
-
 """
 import numpy as np
 

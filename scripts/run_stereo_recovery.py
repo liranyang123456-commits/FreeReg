@@ -128,7 +128,6 @@ def make_figure(rows, n3):
     ax.set_xticks(V)
     fig.tight_layout()
     fig.savefig(OUT / 'stereo_recovery.png', dpi=200)
-***REMOVED***
     print('saved figure')
 
 

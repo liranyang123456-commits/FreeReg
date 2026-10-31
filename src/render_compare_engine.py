@@ -20,7 +20,6 @@ FoundationPose 适配: 本引擎接口与其输出同构 (4x4 位姿), FP 安装
 可通过 PoseEngine(backend='foundationpose') 原位替换。
 
 依赖: torch, numpy, open3d(仅测地球面)
-
 """
 import hashlib
 from pathlib import Path

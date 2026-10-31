@@ -19,6 +19,8 @@ os.environ.setdefault('KMP_DUPLICATE_LIB_OK', 'TRUE')
 
 import sys
 import time
+import csv
+import json
 from pathlib import Path
 
 import numpy as np
@@ -39,10 +41,20 @@ H, W = 240, 320
 
 
 def main():
+    global OUT
+    import argparse
+    ap = argparse.ArgumentParser()
+    ap.add_argument('--seed', type=int, default=0,
+                    help='高斯初始化子集 / torch 种子 (审计运行为 0)')
+    ap.add_argument('--out', default=str(OUT))
+    args = ap.parse_args()
+    OUT = Path(args.out)
+    seed = args.seed
     OUT.mkdir(parents=True, exist_ok=True)
+    torch.manual_seed(seed)
     device = 'cuda' if torch.cuda.is_available() else 'cpu'
     print('=' * 66)
-    print('M4: 3DGS 渲染评测 (pseudo-GT 稠密泼溅 vs 硬泼溅 vs 3DGS)')
+    print(f'M4: 3DGS 渲染评测 (pseudo-GT 稠密泼溅 vs 硬泼溅 vs 3DGS) seed={seed}')
     print('=' * 66)
     K = K0.copy()
     K[:2] *= 0.5   # 320×240 (半分辨率)
@@ -50,7 +62,7 @@ def main():
     pts_dense, normals = load_mesh_points(BOP_MODEL, n_points=20000)
     mu = pts_dense.mean(axis=0)
     pts_dense -= mu
-    rng = np.random.default_rng(0)
+    rng = np.random.default_rng(seed)
     sel = rng.choice(len(pts_dense), 4000, replace=False)
     pts_sparse = pts_dense[sel]
     normals_sparse = normals[sel]
@@ -114,11 +126,17 @@ def main():
     print(f'{"视角":>8} | {"PSNR A(泼溅)":>12} | {"PSNR B(3DGS)":>12} | '
           f'{"SSIM A":>8} | {"SSIM B":>8}')
     pa, pb, sa, sb = [], [], [], []
+    metric_rows = []
     for name, R, t in views_def:
         p_a, p_b = psnr(base[name], gts[name]), psnr(out_test[name], gts[name])
         s_a = ssim_simple(base[name], gts[name])
         s_b = ssim_simple(out_test[name], gts[name])
         pa.append(p_a); pb.append(p_b); sa.append(s_a); sb.append(s_b)
+        metric_rows.append({
+            'view': name, 'split': 'test' if name == 'test' else 'train',
+            'psnr_splat_db': float(p_a), 'psnr_3dgs_db': float(p_b),
+            'ssim_splat': float(s_a), 'ssim_3dgs': float(s_b),
+        })
         tag = ' ←测试(未训练)' if name == 'test' else ''
         print(f'{name:>8} | {p_a:12.2f} | {p_b:12.2f} | {s_a:8.4f} | '
               f'{s_b:8.4f}{tag}')
@@ -142,7 +160,19 @@ def main():
     dt = (time.time() - t0) / n_fps
     print(f'\n渲染速度 (640×480, {len(model.mu)}高斯, torch参考实现): '
           f'{dt * 1000:.0f}ms/帧 = {1 / dt:.1f} FPS')
-    print('  [对照] 官方 CUDA tile-based 3DGS: 100+ FPS (接口同构可替换)')
+    print('  [对照] CUDA tile 光栅化器速率见 scripts/time_3dgs_cuda_rasterizer.py')
+
+    # 保存训练后的高斯参数, 供 CUDA tile 光栅化器 (gsplat) 同场景计时
+    torch.save({
+        'mu': model.mu.detach().cpu(),
+        'log_scale': model.log_scale.detach().cpu(),
+        'rotvec': model.rotvec.detach().cpu(),
+        'color': model.color.detach().cpu(),
+        'logit': model.logit.detach().cpu(),
+        'K_timing': K0, 'H_timing': H2, 'W_timing': W2,
+        'T_timing': make_T(np.eye(3), np.array([0, 0, 900.0])),
+        'seed': seed,
+    }, OUT / 'gaussians.pt')
 
     # ---------- 对比图 ----------
     panels = []
@@ -151,7 +181,31 @@ def main():
         panels.append(row)
     comp = (np.clip(np.concatenate(panels, axis=0), 0, 1) * 255).astype(np.uint8)
     cv2.imwrite(str(OUT / 'compare.png'), cv2.cvtColor(comp, cv2.COLOR_RGB2BGR))
+    with open(OUT / 'metrics.csv', 'w', newline='', encoding='utf-8') as f:
+        w = csv.DictWriter(f, fieldnames=list(metric_rows[0].keys()))
+        w.writeheader()
+        w.writerows(metric_rows)
+    with open(OUT / 'summary.json', 'w', encoding='utf-8') as f:
+        json.dump({
+            'protocol': {
+                'seed': seed, 'gaussians': int(len(model.mu)),
+                'train_views': 4, 'held_out_views': 1,
+                'training_iterations': 300,
+                'quality_resolution': [H, W],
+                'timing_resolution': [H2, W2],
+                'timing_warmup_frames': n_warm,
+                'timing_frames': n_fps,
+            },
+            'train_psnr_3dgs_mean_db': float(np.mean(pb[:4])),
+            'heldout_psnr_3dgs_db': float(pb[-1]),
+            'train_ssim_3dgs_mean': float(np.mean(sb[:4])),
+            'heldout_ssim_3dgs': float(sb[-1]),
+            'render_time_ms': float(dt * 1000),
+            'render_fps': float(1 / dt),
+            'training_time_s': float(t_train),
+        }, f, indent=2)
     print(f'对比图: {OUT / "compare.png"} (GT|泼溅|3DGS × train1/test)')
+    print(f'结构化结果: {OUT / "metrics.csv"}, {OUT / "summary.json"}')
     print('=' * 66)
 
 

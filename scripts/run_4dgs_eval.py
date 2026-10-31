@@ -25,6 +25,8 @@ os.environ.setdefault('KMP_DUPLICATE_LIB_OK', 'TRUE')
 
 import sys
 import time
+import csv
+import json
 from pathlib import Path
 
 import numpy as np
@@ -46,10 +48,20 @@ H, W = 240, 320
 
 
 def main():
+    global OUT
+    import argparse
+    ap = argparse.ArgumentParser()
+    ap.add_argument('--seed', type=int, default=0,
+                    help='高斯初始化子集 / torch 种子 (审计运行为 0)')
+    ap.add_argument('--out', default=str(OUT))
+    args = ap.parse_args()
+    OUT = Path(args.out)
+    seed = args.seed
     OUT.mkdir(parents=True, exist_ok=True)
+    torch.manual_seed(seed)
     device = 'cuda' if torch.cuda.is_available() else 'cpu'
     print('=' * 66)
-    print('M5: 4D 动态渲染 (RTW 形变场 × 3DGS)')
+    print(f'M5: 4D 动态渲染 (RTW 形变场 × 3DGS) seed={seed}')
     print('=' * 66)
     K = K0.copy()
     K[:2] *= 0.5
@@ -57,7 +69,7 @@ def main():
     pts_dense, normals = load_mesh_points(BOP_MODEL, n_points=20000)
     mu = pts_dense.mean(axis=0)
     pts_dense -= mu
-    rng = np.random.default_rng(0)
+    rng = np.random.default_rng(seed)
     sel = rng.choice(len(pts_dense), 4000, replace=False)
     pts_sparse = pts_dense[sel]
 
@@ -127,6 +139,7 @@ def main():
     print(f'{"帧":>14} | {"PSNR 静态模型→动态GT":>22} | '
           f'{"PSNR 4D渲染→动态GT":>20}')
     rows_img = []
+    metric_rows = []
     mu0 = model.mu.detach().clone()
     for name, delta in deform_cases:
         # GT 动态帧: 稠密点形变后泼溅
@@ -155,6 +168,12 @@ def main():
             return 99.0 if mse < 1e-10 else float(-10 * np.log10(mse))
         p_dyn = psnr_fg(r_dyn, gt_dyn, fg)
         p_sta = psnr_fg(r_static, gt_dyn, fg)
+        metric_rows.append({
+            'case': name,
+            'psnr_static_to_dynamic_gt_db': float(p_sta),
+            'psnr_deformed_to_dynamic_gt_db': float(p_dyn),
+            'gain_db': float(p_dyn - p_sta),
+        })
         print(f'{name:>14} | {p_sta:22.2f} | {p_dyn:20.2f}')
         rows_img.append(np.concatenate([gt_dyn, r_static, r_dyn], axis=1))
 
@@ -162,7 +181,24 @@ def main():
                 ).astype(np.uint8)
     cv2.imwrite(str(OUT / 'dynamic.png'),
                 cv2.cvtColor(comp, cv2.COLOR_RGB2BGR))
+    with open(OUT / 'metrics.csv', 'w', newline='', encoding='utf-8') as f:
+        w = csv.DictWriter(f, fieldnames=list(metric_rows[0].keys()))
+        w.writeheader()
+        w.writerows(metric_rows)
+    with open(OUT / 'summary.json', 'w', encoding='utf-8') as f:
+        json.dump({
+            'protocol': {
+                'seed': seed, 'static_training_iterations': 150,
+                'deformation_cases': len(metric_rows),
+                'render_resolution': [H, W],
+            },
+            'static_3dgs_psnr_db': float(p_static),
+            'mean_dynamic_gain_db': float(np.mean(
+                [r['gain_db'] for r in metric_rows])),
+            'cases': metric_rows,
+        }, f, ensure_ascii=False, indent=2)
     print(f'\n对比图: {OUT / "dynamic.png"} (GT动态|静态渲染|4D渲染 × 2帧)')
+    print(f'结构化结果: {OUT / "metrics.csv"}, {OUT / "summary.json"}')
     print('=' * 66)
 
 

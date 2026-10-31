@@ -1,0 +1,179 @@
+diff --git a/bundlesdf/mycuda/common.cu b/bundlesdf/mycuda/common.cu
+index 97974d2..9a02acf 100644
+--- a/bundlesdf/mycuda/common.cu
++++ b/bundlesdf/mycuda/common.cu
+@@ -13,7 +13,20 @@
+ #include <cuda.h>
+ #include <cuda_fp16.h>
+ #include <cuda_runtime.h>
+-#include <bits/stdc++.h>
++#ifdef _MSC_VER
++  #include <vector>
++  #include <string>
++  #include <iostream>
++  #include <algorithm>
++  #include <numeric>
++  #include <cmath>
++  #include <cstring>
++  #include <tuple>
++  #include <unordered_map>
++  #include <unordered_set>
++#else
++  #include <bits/stdc++.h>
++#endif
+ #include <ATen/cuda/CUDAContext.h>
+ #include <torch/torch.h>
+ #include <stdint.h>
+@@ -117,16 +130,16 @@ at::Tensor sampleRaysUniformOccupiedVoxels(const at::Tensor z_in_out,  const at:
+   const int threadx = 32;
+   const int thready = 32;
+ 
+-  AT_DISPATCH_FLOATING_TYPES(z_in_out.type(), "sample_rays_uniform_occupied_voxels_kernel", ([&]
++  AT_DISPATCH_FLOATING_TYPES(z_in_out.scalar_type(), "sample_rays_uniform_occupied_voxels_kernel", ([&]
+   {
+-    sample_rays_uniform_occupied_voxels_kernel<scalar_t><<<{divCeil(N_rays,threadx),divCeil(N_samples,thready)}, {threadx,thready}>>>(z_sampled.packed_accessor32<scalar_t,2,torch::RestrictPtrTraits>(),z_in_out.packed_accessor32<scalar_t,3,torch::RestrictPtrTraits>(),z_vals.packed_accessor32<scalar_t,2,torch::RestrictPtrTraits>());
++    sample_rays_uniform_occupied_voxels_kernel<scalar_t><<<dim3(divCeil(N_rays,threadx),divCeil(N_samples,thready)), dim3(threadx,thready)>>>(z_sampled.packed_accessor32<scalar_t,2,torch::RestrictPtrTraits>(),z_in_out.packed_accessor32<scalar_t,3,torch::RestrictPtrTraits>(),z_vals.packed_accessor32<scalar_t,2,torch::RestrictPtrTraits>());
+   }));
+ 
+   return z_vals;
+ }
+ 
+ template<class scalar_t>
+-__global__ void postprocessOctreeRayTracingKernel(const torch::PackedTensorAccessor32<long,1,torch::RestrictPtrTraits> ray_index, const torch::PackedTensorAccessor32<scalar_t,2,torch::RestrictPtrTraits> depth_in_out, const torch::PackedTensorAccessor32<long,1,torch::RestrictPtrTraits> unique_intersect_ray_ids, const torch::PackedTensorAccessor32<long,1,torch::RestrictPtrTraits> start_poss, torch::PackedTensorAccessor32<scalar_t,3,torch::RestrictPtrTraits> depths_in_out_padded)
++__global__ void postprocessOctreeRayTracingKernel(const torch::PackedTensorAccessor32<int64_t,1,torch::RestrictPtrTraits> ray_index, const torch::PackedTensorAccessor32<scalar_t,2,torch::RestrictPtrTraits> depth_in_out, const torch::PackedTensorAccessor32<int64_t,1,torch::RestrictPtrTraits> unique_intersect_ray_ids, const torch::PackedTensorAccessor32<int64_t,1,torch::RestrictPtrTraits> start_poss, torch::PackedTensorAccessor32<scalar_t,3,torch::RestrictPtrTraits> depths_in_out_padded)
+ {
+   const int unique_id_pos = blockIdx.x * blockDim.x + threadIdx.x;
+   if (unique_id_pos>=unique_intersect_ray_ids.size(0)) return;
+@@ -157,11 +170,11 @@ at::Tensor postprocessOctreeRayTracing(const at::Tensor ray_index, const at::Ten
+ 
+   const int n_unique_ids = unique_intersect_ray_ids.sizes()[0];
+   at::Tensor depths_in_out_padded = at::zeros({N_rays,max_intersections,2}, torch::TensorOptions().dtype(torch::kFloat32).device(torch::kCUDA, 0).requires_grad(false));
+-  dim3 threads = {256};
+-  dim3 blocks = {divCeil(n_unique_ids,threads.x)};
+-  AT_DISPATCH_FLOATING_TYPES(depth_in_out.type(), "postprocessOctreeRayTracingKernel", ([&]
++  dim3 threads(256);
++  dim3 blocks(divCeil(n_unique_ids, (int)threads.x));
++  AT_DISPATCH_FLOATING_TYPES(depth_in_out.scalar_type(), "postprocessOctreeRayTracingKernel", ([&]
+   {
+-    postprocessOctreeRayTracingKernel<scalar_t><<<blocks,threads>>>(ray_index.packed_accessor32<long,1,torch::RestrictPtrTraits>(), depth_in_out.packed_accessor32<scalar_t,2,torch::RestrictPtrTraits>(), unique_intersect_ray_ids.packed_accessor32<long,1,torch::RestrictPtrTraits>(), start_poss.packed_accessor32<long,1,torch::RestrictPtrTraits>(), depths_in_out_padded.packed_accessor32<scalar_t,3,torch::RestrictPtrTraits>());
++    postprocessOctreeRayTracingKernel<scalar_t><<<blocks,threads>>>(ray_index.packed_accessor32<int64_t,1,torch::RestrictPtrTraits>(), depth_in_out.packed_accessor32<scalar_t,2,torch::RestrictPtrTraits>(), unique_intersect_ray_ids.packed_accessor32<int64_t,1,torch::RestrictPtrTraits>(), start_poss.packed_accessor32<int64_t,1,torch::RestrictPtrTraits>(), depths_in_out_padded.packed_accessor32<scalar_t,3,torch::RestrictPtrTraits>());
+   }));
+ 
+   return depths_in_out_padded;
+@@ -220,7 +233,7 @@ __device__ void calculateBarycentricCoordinate2DKernel(const Eigen::Matrix<float
+ 
+ 
+ template<class scalar_t>
+-__global__ void rayColorToTextureImageKernel(const torch::PackedTensorAccessor32<long,2,torch::RestrictPtrTraits> F, const torch::PackedTensorAccessor32<scalar_t,2,torch::RestrictPtrTraits> V, const torch::PackedTensorAccessor32<scalar_t,2,torch::RestrictPtrTraits> hit_locations, const torch::PackedTensorAccessor32<long,1,torch::RestrictPtrTraits> hit_face_ids, const torch::PackedTensorAccessor32<scalar_t,2,torch::RestrictPtrTraits> uvs_tex, torch::PackedTensorAccessor32<scalar_t,2,torch::RestrictPtrTraits> uvs)
++__global__ void rayColorToTextureImageKernel(const torch::PackedTensorAccessor32<int64_t,2,torch::RestrictPtrTraits> F, const torch::PackedTensorAccessor32<scalar_t,2,torch::RestrictPtrTraits> V, const torch::PackedTensorAccessor32<scalar_t,2,torch::RestrictPtrTraits> hit_locations, const torch::PackedTensorAccessor32<int64_t,1,torch::RestrictPtrTraits> hit_face_ids, const torch::PackedTensorAccessor32<scalar_t,2,torch::RestrictPtrTraits> uvs_tex, torch::PackedTensorAccessor32<scalar_t,2,torch::RestrictPtrTraits> uvs)
+ {
+   const int i_hit = blockIdx.x*blockDim.x + threadIdx.x;
+   if (i_hit>=hit_locations.size(0)) return;
+@@ -262,12 +275,12 @@ void rayColorToTextureImageCUDA(const at::Tensor &F, const at::Tensor &V, const
+   CHECK_CONTIGUOUS(hit_face_ids);
+   CHECK_CONTIGUOUS(uvs_tex);
+ 
+-  dim3 threads = {512};
+-  dim3 blocks = {divCeil(int(hit_locations.sizes()[0]),threads.x)};
++  dim3 threads(512);
++  dim3 blocks(divCeil(int(hit_locations.sizes()[0]), (int)threads.x));
+ 
+-  AT_DISPATCH_FLOATING_TYPES(V.type(), "rayColorToTextureImageKernel", ([&]
++  AT_DISPATCH_FLOATING_TYPES(V.scalar_type(), "rayColorToTextureImageKernel", ([&]
+   {
+-    rayColorToTextureImageKernel<scalar_t><<<blocks,threads>>>(F.packed_accessor32<long,2,torch::RestrictPtrTraits>(), V.packed_accessor32<scalar_t,2,torch::RestrictPtrTraits>(), hit_locations.packed_accessor32<scalar_t,2,torch::RestrictPtrTraits>(), hit_face_ids.packed_accessor32<long,1,torch::RestrictPtrTraits>(), uvs_tex.packed_accessor32<scalar_t,2,torch::RestrictPtrTraits>(), uvs.packed_accessor32<scalar_t,2,torch::RestrictPtrTraits>());
++    rayColorToTextureImageKernel<scalar_t><<<blocks,threads>>>(F.packed_accessor32<int64_t,2,torch::RestrictPtrTraits>(), V.packed_accessor32<scalar_t,2,torch::RestrictPtrTraits>(), hit_locations.packed_accessor32<scalar_t,2,torch::RestrictPtrTraits>(), hit_face_ids.packed_accessor32<int64_t,1,torch::RestrictPtrTraits>(), uvs_tex.packed_accessor32<scalar_t,2,torch::RestrictPtrTraits>(), uvs.packed_accessor32<scalar_t,2,torch::RestrictPtrTraits>());
+   }));
+ }
+ 
+@@ -311,3 +324,4 @@ __device__ bool isPixelInsideTriangle(const Eigen::Matrix<float,3,2> &triangle,
+   }
+   return true;
+ }
++
+diff --git a/bundlesdf/mycuda/setup.py b/bundlesdf/mycuda/setup.py
+index ad00334..bd8f018 100644
+--- a/bundlesdf/mycuda/setup.py
++++ b/bundlesdf/mycuda/setup.py
+@@ -15,8 +15,8 @@ from torch.utils.cpp_extension import load
+ code_dir = os.path.dirname(os.path.realpath(__file__))
+ 
+ 
+-nvcc_flags = ['-Xcompiler', '-O3', '-std=c++14', '-U__CUDA_NO_HALF_OPERATORS__', '-U__CUDA_NO_HALF_CONVERSIONS__', '-U__CUDA_NO_HALF2_OPERATORS__']
+-c_flags = ['-O3', '-std=c++14']
++nvcc_flags = ['-Xcompiler', '-O3', '-std=c++17', '-U__CUDA_NO_HALF_OPERATORS__', '-U__CUDA_NO_HALF_CONVERSIONS__', '-U__CUDA_NO_HALF2_OPERATORS__']
++c_flags = ['-O3', '-std=c++17']
+ 
+ setup(
+     name='common',
+@@ -35,6 +35,7 @@ setup(
+     include_dirs=[
+         "/usr/local/include/eigen3",
+         "/usr/include/eigen3",
++        r"C:\Users\lry\.conda\envs\py3d\Library\include\eigen3",
+     ],
+     cmdclass={
+         'build_ext': BuildExtension
+diff --git a/datareader.py b/datareader.py
+index b7a6606..56e3fd5 100644
+--- a/datareader.py
++++ b/datareader.py
+@@ -410,7 +410,12 @@ class LinemodReader(LinemodOcclusionReader):
+         self.color_files.append(f'{self.base_dir}/rgb/{id:06d}.png')
+       self.make_id_strs()
+ 
+-    self.ob_ids = np.setdiff1d(np.arange(1,16), np.array([7,3])).tolist()  # Exclude bowl and mug
++    import os as _os
++    _only = _os.environ.get('FP_ONLY_OBJS', '')
++    if _only:
++      self.ob_ids = [int(x) for x in _only.split(',')]
++    else:
++      self.ob_ids = np.setdiff1d(np.arange(1,16), np.array([7,3])).tolist()  # Exclude bowl and mug
+     self.load_symmetry_tfs()
+ 
+ 
+diff --git a/mycpp/include/Utils.h b/mycpp/include/Utils.h
+index 41703f5..eb8c1cc 100644
+--- a/mycpp/include/Utils.h
++++ b/mycpp/include/Utils.h
+@@ -27,7 +27,13 @@
+ #include <Eigen/Geometry>
+ #include <string>
+ #include <limits.h>
+-#include <unistd.h>
++#ifdef _WIN32
++  #include <io.h>
++  #define F_OK 0
++  #define access _access
++#else
++  #include <unistd.h>
++#endif
+ #include <memory>
+ #include <math.h>
+ #include <boost/format.hpp>
+diff --git a/mycpp/src/app/pybind_api.cpp b/mycpp/src/app/pybind_api.cpp
+index 6a415c3..ff7472c 100644
+--- a/mycpp/src/app/pybind_api.cpp
++++ b/mycpp/src/app/pybind_api.cpp
+@@ -9,6 +9,8 @@
+ */
+ 
+ 
++#define _USE_MATH_DEFINES
++#include <cmath>
+ #include "Utils.h"
+ #include <boost/algorithm/string.hpp>
+ #include <pybind11/pybind11.h>
+diff --git a/run_linemod.py b/run_linemod.py
+index b927bc6..4a820c0 100644
+--- a/run_linemod.py
++++ b/run_linemod.py
+@@ -19,6 +19,8 @@ from datareader import *
+ from estimater import *
+ code_dir = os.path.dirname(os.path.realpath(__file__))
+ sys.path.append(f'{code_dir}/mycpp/build')
++os.add_dll_directory(r'C:\Users\lry\.conda\envs\py3d\Lib\site-packages\torch\lib')
++os.add_dll_directory(r'C:\Program Files\NVIDIA GPU Computing Toolkit\CUDA\v12.8\bin')
+ import yaml
+ 
+ 

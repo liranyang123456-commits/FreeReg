@@ -13,6 +13,8 @@ SOTA在Ours数据集: Endo3R 官方 on 临床合成飞行视频 (ATE vs GT轨迹
 import os
 os.environ.setdefault('KMP_DUPLICATE_LIB_OK', 'TRUE')
 
+import csv
+import json
 import sys
 import subprocess
 import time
@@ -54,13 +56,15 @@ def main():
     m.points, m.axis_pts, m.axis_dir = pts, axis_pts, axis_dir
     poses_gt = make_flythrough_poses(m, n_frames=N_FRAMES, seed=0)
     colors = np.tile(np.array([0.85, 0.65, 0.60]), (len(pts), 1))
+    for stale in FRAMES_DIR.glob('*.png'):
+        stale.unlink()
     for i, T in enumerate(poses_gt):
         out = render_model(pts, colors, T, K, H, W, radius=1,
                            device=device)
         img = (out['feat'].cpu().numpy() * 255).astype(np.uint8)
         cv2.imwrite(str(FRAMES_DIR / f'{i:06d}.png'),
                     cv2.cvtColor(img, cv2.COLOR_RGB2BGR))
-    print(f'渲染 {N_FRAMES} 帧 → {FRAMES_DIR}')
+    print(f'请求 {N_FRAMES} 帧, 轨迹生成 {len(poses_gt)} 帧 → {FRAMES_DIR}')
 
     # ---------- 运行 Endo3R ----------
     t0 = time.time()
@@ -89,6 +93,8 @@ def main():
     A = np.array([p[:3, 3] for p in poses_e])
     B = np.array([p[:3, 3] for p in
                   [np.linalg.inv(T) for T in poses_gt]])  # c2w
+    n_common = min(len(A), len(B))
+    A, B = A[:n_common], B[:n_common]
     R, t, s = kabsch_umeyama(A, B, with_scale=True)
     A2 = s * (A @ R.T) + t
     ate = np.linalg.norm(A2 - B, axis=1)
@@ -100,6 +106,29 @@ def main():
     print('\n对照说明: 本管线逐帧位姿误差在同序列见 '
           'run_ct_video_registration.py (TRE-NN), 拥有公制尺度; '
           'Endo3R 为任意尺度单目重建, 仅形状可比。')
+    with (OUT / 'ate_frames.csv').open(
+            'w', newline='', encoding='utf-8') as stream:
+        writer = csv.writer(stream)
+        writer.writerow(['frame', 'aligned_ate_mm'])
+        writer.writerows((index, float(value))
+                         for index, value in enumerate(ate))
+    with (OUT / 'summary.json').open('w', encoding='utf-8') as stream:
+        json.dump({
+            'protocol': {
+                'requested_frames': N_FRAMES,
+                'generated_frames': len(poses_gt),
+                'estimated_poses': len(poses_e),
+                'compared_poses': n_common,
+                'metric': 'translation ATE after similarity alignment',
+                'not_comparable_to_tre_nn': True,
+            },
+            'scale_alignment': float(s),
+            'ate_mean_mm': float(ate.mean()),
+            'ate_median_mm': float(np.median(ate)),
+            'ate_max_mm': float(ate.max()),
+            'runtime_s': float(time.time() - t0),
+        }, stream, indent=2)
+    print(f'Saved {OUT / "summary.json"}')
     print('=' * 66)
 
 

@@ -140,19 +140,26 @@ def eval_scene(sdir, device, frames=(2, 5, 7), seed=0):
 
 
 def main():
+    global OUT
     ap = argparse.ArgumentParser()
     ap.add_argument('--scenes', type=int, default=8)
+    ap.add_argument('--seed', type=int, default=0,
+                    help='深度噪声与 RTW 初始化种子 (审计运行为 0)')
+    ap.add_argument('--out', default=str(OUT),
+                    help='输出目录 (多次运行时指定不同目录)')
     args = ap.parse_args()
+    OUT = Path(args.out)
     OUT.mkdir(parents=True, exist_ok=True)
+    torch.manual_seed(args.seed)
     device = 'cuda' if torch.cuda.is_available() else 'cpu'
     print('=' * 72)
-    print('real_colon 真实医疗 GT 评测 (位姿+形变, 免人工标注)')
+    print(f'real_colon 真实医疗 GT 评测 (位姿+形变, 免人工标注) seed={args.seed}')
     print('=' * 72)
     scenes = sorted([p for p in RC.iterdir() if p.is_dir()])[:args.scenes]
     all_rows = []
     for s in scenes:
         try:
-            rows = eval_scene(s, device)
+            rows = eval_scene(s, device, seed=args.seed)
         except Exception as e:
             print(f'  [{s.name}] 失败: {e}')
             continue
